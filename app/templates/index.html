@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Login</title>
+    <!-- Incluye jQuery en tu página -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <form id="tuFormularioID" method="POST">
+        <input type="hidden" name="origin_page" value="valor_origen">
+        
+        <label for="usuario">Usuario:</label>
+        <input type="text" id="usuario" name="usuario" placeholder="Ingrese su usuario" required>
+        
+        <label for="contraseña">Contraseña:</label>
+        <input type="password" id="contraseña" name="contraseña" placeholder="Ingrese su contraseña" required>
+        
+        <label for="cuenta">Cuenta:</label>
+        <input type="text" id="cuenta" name="cuenta" placeholder="Ingrese su cuenta" required>
+        
+        <label for="access_token">Access Token:</label>
+        <input type="text" id="access_token" name="access_token" placeholder="Ingrese su access token">
+        
+        <button type="submit">Enviar</button>
+    </form>
+
+    <script>
+        $(document).ready(function() {
+            $('#tuFormularioID').submit(function(event) {
+                event.preventDefault();
+                
+                var origin_page = $('#origin_page').val();
+                var usuario = $('#usuario').val();
+                var contraseña = $('#contraseña').val();
+                var account = $('#cuenta').val();
+                var access_token = $('#access_token').val();
+                var pais =  'argentina';
+                var usuario_id = '1';
+                var selector = 'produccion'
+                $.ajax({
+                    url: '/panel_control',
+                    type: 'POST',
+                    data: {
+                        origin_page: origin_page,
+                        usuario: usuario,
+                        usuario_id: usuario_id,
+                        contraseña: contraseña,
+                        account: account,
+                        pais: pais,
+                        selector: selector,
+                        access_token: access_token
+                    },
+                    success: function(response) {
+                        console.log(response);
+                    },
+                    error: function(error) {
+                        console.error('Error en la solicitud AJAX:', error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
