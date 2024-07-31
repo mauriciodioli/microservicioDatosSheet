@@ -1,1 +1,5 @@
 app/service_account.json
+/venv/
+
+*.pyc
+MICROSERVICIO-DATOSSHEET.code-workspace
