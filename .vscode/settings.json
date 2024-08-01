@@ -2,5 +2,6 @@
     "DockerRun.DisableDockerrc": true,
     "DockerRun.Containers": [
         "0b8300c48edb"
-    ]
+    ],
+    "python.pythonPath": "/usr/local/bin/python"
 }

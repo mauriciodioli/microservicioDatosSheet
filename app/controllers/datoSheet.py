@@ -99,7 +99,7 @@ def leerSheet(sheetId,sheet_name):
      
         if not get.autenticado_sheet:        
             # recibo la tupla pero como este es para el bot leo el primer elemento 
-            credentials_path = os.path.join(os.getcwd(), 'service_account.json')
+            credentials_path = os.path.join(os.getcwd(), 'app/service_account.json')
             # Crear instancia del gestor de hojas
             get.sheet_manager = GoogleSheetManager(credentials_path)
 
