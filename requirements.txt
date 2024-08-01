@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 blinker==1.8.2
 certifi==2024.7.4
 charset-normalizer==3.3.2
@@ -24,3 +25,31 @@ pymysql
 
 
 
+=======
+blinker==1.8.2
+certifi==2024.7.4
+charset-normalizer==3.3.2
+click==8.1.7
+colorama==0.4.6
+Flask==3.0.3
+idna==3.7
+itsdangerous==2.2.0
+Jinja2==3.1.4
+MarkupSafe==2.1.5
+requests==2.32.3
+urllib3==2.2.2
+Werkzeug==3.0.3
+python-dotenv
+flask_sqlalchemy
+flask_cors
+flask_jwt_extended==4.6.0
+flask_marshmallow==1.2.1
+pandas
+gspread
+oauth2client
+pymysql
+
+
+
+
+>>>>>>> 91d15fd (actualizacion)

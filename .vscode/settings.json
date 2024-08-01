@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
     "DockerRun.DisableDockerrc": true,
     "DockerRun.Containers": [
@@ -5,3 +6,11 @@
     ],
     "python.pythonPath": "/usr/local/bin/python"
 }
+=======
+{
+    "DockerRun.DisableDockerrc": true,
+    "DockerRun.Containers": [
+        "0b8300c48edb"
+    ]
+}
+>>>>>>> 91d15fd (actualizacion)
