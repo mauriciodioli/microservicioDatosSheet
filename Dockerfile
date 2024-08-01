@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e5bb9ec (nuevo commit)
 # Usa una imagen base oficial de Python
 FROM python:3.12
 
@@ -26,6 +29,7 @@ ENV FLASK_ENV=development
 
 # Comando por defecto para ejecutar la aplicación
 CMD ["flask", "run", "--host=0.0.0.0"]
+<<<<<<< HEAD
 =======
 # Usa una imagen base oficial de Python
 FROM python:3.12
@@ -55,3 +59,5 @@ ENV FLASK_ENV=development
 # Comando por defecto para ejecutar la aplicación
 CMD ["flask", "run", "--host=0.0.0.0"]
 >>>>>>> 91d15fd (actualizacion)
+=======
+>>>>>>> e5bb9ec (nuevo commit)
