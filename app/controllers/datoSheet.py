@@ -4,7 +4,7 @@ from datetime import datetime
 from app.models.sheetModels.GoogleSheetManager  import GoogleSheetManager
 from app.models.sheetModels.sheet_handler import SheetHandler
 import json
-from models.instrumentosSuscriptos import InstrumentoSuscriptos
+from app.models.instrumentosSuscriptos import InstrumentoSuscriptos
 from app.utils.common import  db
 from dotenv import load_dotenv
 #from pydrive.auth import GoogleAuth
@@ -32,7 +32,7 @@ lock = threading.Lock()
 newPath = os.path.join(os.getcwd(), 'strategies/credentials_module.json') 
 directorio_credenciales = newPath 
 
-SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
+SPREADSHEET_ID = '1GMv6fwa1-4iwhPBZqY6ZNEVppPeyZY0R4JB39Xmkc5s'
 
 
 precios_data = {}
@@ -45,7 +45,7 @@ datoSheet = Blueprint('datoSheet',__name__)
 newPath = os.path.join(os.getcwd(), 'strategies/credentials_module.json') 
 directorio_credenciales = newPath 
 
-SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
+SPREADSHEET_ID = '1GMv6fwa1-4iwhPBZqY6ZNEVppPeyZY0R4JB39Xmkc5s'
 
 
 precios_data = {}

@@ -10,6 +10,12 @@ COPY requirements.txt .
 # Instala las dependencias necesarias
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Actualiza pyRofex
+RUN pip install -U pyRofex
+
+# Desinstala la librería websocket y luego la vuelve a instalar
+RUN pip uninstall -y websocket && pip install websocket-client
+
 # Copia el contenido de tu proyecto a la imagen
 COPY . .
 
@@ -17,8 +23,5 @@ COPY . .
 ENV FLASK_APP=app/app.py
 ENV FLASK_ENV=development
 
-# Expone el puerto en el que se ejecutará la aplicación
-EXPOSE 5000
-
-# Comando para ejecutar la aplicación
+# Comando por defecto para ejecutar la aplicación
 CMD ["flask", "run", "--host=0.0.0.0"]

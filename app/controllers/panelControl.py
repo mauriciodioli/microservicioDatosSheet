@@ -1,21 +1,17 @@
 # Creating  Routes
-from pipes import Template
-from unittest import result
+
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy import and_
 import requests
-import json
-from flask import Blueprint, render_template, request, redirect, url_for, flash,jsonify, abort,current_app
-import tokens.token as Token
 
-from app.utils.db import db
-import jwt
+from flask import Blueprint, render_template, request, redirect, url_for, flash,jsonify, abort,current_app
+
 import threading
 import app.controllers.datoSheet as datoSheet
 import app.controllers.get_login as get
 import time
 from datetime import datetime
-from queue import Queue
+
 
 
 panelControl = Blueprint('panelControl',__name__)

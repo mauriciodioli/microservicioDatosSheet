@@ -70,7 +70,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.route('/')
 def index():
     try:
-        usuarios = db.session.query(Usuario).all()
+      
         return render_template('index.html')
     except Exception as e:
         error_message = f"Error en index: {str(e)}"

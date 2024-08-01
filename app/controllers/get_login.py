@@ -16,7 +16,7 @@ from app.controllers.wsocket import wsocketConexion as conexion
 from app.controllers.wsocket import websocketConexionShedule as conexionShedule
 from app.controllers.wsocket import SuscripcionDeSheet
 
-import tokens.token as Token
+import app.tokens.token as Token
 import app.controllers.instrumentos as inst
 from app.models.instrumento import Instrumento
 from app.models.cuentas import Cuenta

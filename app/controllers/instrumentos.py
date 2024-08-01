@@ -4,7 +4,8 @@ import requests
 import json
 import pyRofex
 from flask import Blueprint, render_template, request, redirect, url_for, flash,jsonify
-from models.instrumento import Instrumento
+from app.models.instrumento import Instrumento
+
 import app.controllers.get_login as get
 import app.controllers.validaInstrumentos as valida
 import time
