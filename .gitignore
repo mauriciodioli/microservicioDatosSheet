@@ -16,7 +16,4 @@ __pycache__/
 
 # Ignorar archivos específicos
 app/service_account.json
-/venv/
-
-*.pyc
-MICROSERVICIO-DATOSSHEET.code-workspace
+/pruebasheetpython.json
