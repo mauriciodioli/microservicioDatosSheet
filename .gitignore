@@ -1,3 +1,20 @@
+# Ignorar el entorno virtual
+venv/
+.venv/
+
+# Ignorar archivos de caché de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignorar archivos específicos de configuración del entorno
+.env
+
+# Ignorar archivos de espacio de trabajo de VSCode
+*.code-workspace
+.vscode/
+
+# Ignorar archivos específicos
 app/service_account.json
 /venv/
 
