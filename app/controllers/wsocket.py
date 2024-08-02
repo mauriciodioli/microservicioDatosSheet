@@ -413,7 +413,7 @@ def get_instrumento_para_suscripcion_db(app):
 def get_instrumento_para_suscripcion_json():
    try:
         src_directory = os.getcwd() # Busca directorio raíz src o app 
-        ruta_archivo_json = os.path.join(src_directory, 'listadoInstrumentos/instrumentos_001.json')
+        ruta_archivo_json = os.path.join(src_directory, 'app/listadoInstrumentos/instrumentos_001.json')
        # ruta_archivo_json = 'strategies/listadoInstrumentos/instrumentos_001.json'    
         with open(ruta_archivo_json , 'r') as archivo:
             contenido = archivo.read()
