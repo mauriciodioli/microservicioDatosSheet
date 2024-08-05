@@ -1,11 +1,11 @@
 on:
   push:
     branches:
-      - master
+      - main
 
 name: deploy
 env:
-  DEPLOYMENT_VERSION: "ms202401i" # Variable global para representar 202404   
+  DEPLOYMENT_VERSION: "ms202401i" # Variable global para representar ms202401i   
 
 jobs:
   deploy-to-cluster:
@@ -17,9 +17,9 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
     
-    - name: Set Dockerfile WORKDIR to /src
+    - name: Set Dockerfile WORKDIR to /app
       run: |
-        sed -i 's/WORKDIR \/app/WORKDIR \/src/' Dockerfile
+        sed -i 's/WORKDIR \/app/WORKDIR \/app/' Dockerfile
 
     - name: Build and Push to Docker Hub
       uses: docker/build-push-action@v1
@@ -30,45 +30,4 @@ jobs:
         tag_with_ref: true
         tags: ${{ github.sha }}
 
-    - name: Stop and remove existing container
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ env.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          docker stop ${{ env.DEPLOYMENT_VERSION }} || true
-          docker rm ${{ env.DEPLOYMENT_VERSION }} || true
-
-    - name: Remove existing Docker image
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ env.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          IMAGE_ID=$(docker images -q ${{ github.repository_owner }}/ms202401i)
-          echo "IMAGE_ID is $IMAGE_ID"
-          if [ ! -z "$IMAGE_ID" ]; then
-            docker rmi $IMAGE_ID
-          fi
-
-    - name: Copy Docker image to AWS instance
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ env.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          docker pull docker.io/${{ github.repository_owner }}/ms202401i:${{ github.sha }}
-          docker run -d --name ${{ env.DEPLOYMENT_VERSION }} -p 5000:5001 --restart always docker.io/${{ github.repository_owner }}/ms202401i:${{ github.sha }}
-
-    - name: Restart container
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ env.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          docker stop ${{ env.DEPLOYMENT_VERSION }} || true
-          docker start ${{ env.DEPLOYMENT_VERSION }}
+   
