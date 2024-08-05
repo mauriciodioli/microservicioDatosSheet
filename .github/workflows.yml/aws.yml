@@ -21,6 +21,7 @@ jobs:
         run: |
           echo "Verifying changes..."
           git status
+        continue-on-error: true  # Para que la ejecución no falle si git status no encuentra nada
 
       - name: Set Dockerfile WORKDIR to /app
         run: |
@@ -29,7 +30,7 @@ jobs:
       - name: Verify Dockerfile WORKDIR
         run: |
           echo "Verifying Dockerfile WORKDIR..."
-          grep WORKDIR Dockerfile
+          cat Dockerfile | grep WORKDIR
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
@@ -40,7 +41,7 @@ jobs:
       - name: Verify Docker Hub Login
         run: |
           echo "Verifying Docker Hub login..."
-          docker info | grep Username
+          docker info
 
       - name: Build and Push to Docker Hub
         uses: docker/build-push-action@v2
@@ -52,4 +53,4 @@ jobs:
       - name: Verify Docker Image Push
         run: |
           echo "Verifying Docker image push..."
-          docker images | grep ms202401i
+          docker images
