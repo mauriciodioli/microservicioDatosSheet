@@ -9,28 +9,33 @@ env:
 
 jobs:
   deploy-to-cluster:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy
+      cancel-in-progress: true
+
     env:
       EC2_HOST: ec2-44-220-157-212.compute-1.amazonaws.com
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-      
+
       - name: Verify Changes are Checked Out
         run: |
           echo "Verifying changes..."
-          git status
-        continue-on-error: true  # Para que la ejecución no falle si git status no encuentra nada
+          ls -l
 
       - name: Set Dockerfile WORKDIR to /app
         run: |
+          echo "Setting Dockerfile WORKDIR..."
           sed -i 's/WORKDIR \/app/WORKDIR \/app/' Dockerfile
 
       - name: Verify Dockerfile WORKDIR
         run: |
           echo "Verifying Dockerfile WORKDIR..."
-          cat Dockerfile | grep WORKDIR
+          grep WORKDIR Dockerfile
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
@@ -53,4 +58,4 @@ jobs:
       - name: Verify Docker Image Push
         run: |
           echo "Verifying Docker image push..."
-          docker images
+          docker images | grep ms202401i
