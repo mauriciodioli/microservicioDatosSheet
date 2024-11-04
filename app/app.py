@@ -24,6 +24,7 @@ from app.controllers.validaInstrumentos import validaInstrumentos
 from app.controllers.instrumentos import instrumentos
 from app.tokens.token import token
 from app.controllers.get_login import get_login
+from app.Experimental.red_lstn import red_lstn
 
 
 load_dotenv()
@@ -51,6 +52,7 @@ app.register_blueprint(instrumentoGet)
 app.register_blueprint(validaInstrumentos)
 app.register_blueprint(instrumentos)
 app.register_blueprint(get_login)
+app.register_blueprint(red_lstn)
 
 engine = create_engine(Config.SQLALCHEMY_DATABASE_URI, poolclass=QueuePool, pool_timeout=60, pool_size=1000)
 
@@ -70,7 +72,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.route('/')
 def index():
     try:
-      
+        
+        
+             
         return render_template('index.html')
     except Exception as e:
         error_message = f"Error en index: {str(e)}"

@@ -4,10 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulario de Login</title>
-    <!-- Incluye jQuery en tu página -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style>
+        #formCargarDatos {
+            display: block;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 15px;
+        }
+        .modal {
+            display: none;
+            position: absolute;
+            border: 1px solid #ccc;
+            background: white;
+            padding: 20px;
+            width: 50%; /* Ocupa la mitad de la pantalla */
+            max-width: 800px;
+            height: auto;
+            overflow: auto;
+            resize: both; /* Permite redimensionar */
+        }
+        .canvas-container {
+            width: 100%; /* Ocupa todo el ancho dentro del modal */
+            height: auto; /* Mantiene la proporción del gráfico */
+        }
+        #modalDatos {
+            left: 0;
+        }
+        #modalDatosPrediccion {
+            left: 50%;
+        }
+
+
+
+
+
+
+
+        /* Estilos del botón para abrir el modal */
+        #btnAbrirModal {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        /* Estilos del modal redimensionable */
+        #modalDatosRedimensionable {
+            display: none;
+            position: absolute;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            padding: 20px;
+            width: 50%;
+            height: 50%;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            overflow: auto;
+            resize: both;
+        }
+    </style>
 </head>
 <body>
+
+
+    <!-- Formulario de Login -->
     <form id="tuFormularioID" method="POST">
         <input type="hidden" name="origin_page" value="valor_origen">
         
@@ -26,41 +90,158 @@
         <button type="submit">Enviar</button>
     </form>
 
+    <!-- Formulario para cargar datos -->
+    <form id="formCargarDatos" method="POST">
+        <label for="start_date">Fecha de Inicio:</label>
+        <input type="date" id="start_date" name="start_date" required>
+
+        <label for="end_date">Fecha de Fin:</label>
+        <input type="date" id="end_date" name="end_date" required>
+
+        <label for="asset_type">Tipo de Activo:</label>
+        <input type="text" id="asset_type" name="asset_type" placeholder="Ej. AAPL" required>
+        
+        <button type="button" id="btnCargarDatos">Cargar y Procesar Datos</button>
+    </form>
+    
+    <h1>Predicciones de Precios de Cierre</h1>
+    
+    <br>
+    <a href="/">Regresar</a>
+
+    <!-- Modal para Datos Reales -->
+    <div id="modalDatos" class="modal">
+        <h2>Datos Reales</h2>
+        <div class="canvas-container">
+            <canvas id="graficoReal" width="800" height="400"></canvas>
+        </div>
+        <button class="cerrarModal">Cerrar</button>
+    </div>
+
+    <!-- Modal para Predicciones -->
+    <div id="modalDatosPrediccion" class="modal">
+        <h2>Predicciones</h2>
+        <div class="canvas-container">
+            <canvas id="graficoPrediccion" width="800" height="400"></canvas>
+        </div>
+        <button class="cerrarModal">Cerrar</button>
+    </div>
+
     <script>
+        let graficoReal, graficoPrediccion;
+
         $(document).ready(function() {
+            // Hacer los modales redimensionables y movibles
+            $(".modal").resizable().draggable();
+
             $('#tuFormularioID').submit(function(event) {
                 event.preventDefault();
+                // Aquí iría el código de autenticación si es necesario
+            });
+
+            $('#btnCargarDatos').click(function() {
+                var start_date = $('#start_date').val();
+                var end_date = $('#end_date').val();
+                var asset_type = $('#asset_type').val();
                 
-                var origin_page = $('#origin_page').val();
-                var usuario = $('#usuario').val();
-                var contraseña = $('#contraseña').val();
-                var account = $('#cuenta').val();
-                var access_token = $('#access_token').val();
-                var pais =  'argentina';
-                var usuario_id = '1';
-                var selector = 'produccion'
                 $.ajax({
-                    url: '/panel_control',
+                    url: '/cargar_datos',
                     type: 'POST',
-                    data: {
-                        origin_page: origin_page,
-                        usuario: usuario,
-                        usuario_id: usuario_id,
-                        contraseña: contraseña,
-                        account: account,
-                        pais: pais,
-                        selector: selector,
-                        access_token: access_token
-                    },
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        start_date: start_date,
+                        end_date: end_date,
+                        asset_type: asset_type
+                    }),
                     success: function(response) {
-                        console.log(response);
+                        mostrarDatosReales(response.fechas, response.precios_reales);
+                        mostrarPredicciones(response.fechas, response.predicciones);
                     },
                     error: function(error) {
                         console.error('Error en la solicitud AJAX:', error);
+                        alert('Error en la carga de datos');
                     }
                 });
             });
+
+            $('.cerrarModal').click(function() {
+                $(this).closest('.modal').hide();
+            });
         });
+
+        function mostrarDatosReales(fechas, preciosReales) {
+            if (graficoReal) graficoReal.destroy();
+            var ctx = document.getElementById('graficoReal').getContext('2d');
+            graficoReal = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fechas,
+                    datasets: [{
+                        label: 'Precios Reales',
+                        data: preciosReales,
+                        borderColor: 'blue',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+            $('#modalDatos').show();
+        }
+
+        function mostrarPredicciones(fechas, predicciones) {
+            if (graficoPrediccion) graficoPrediccion.destroy();
+            var ctx = document.getElementById('graficoPrediccion').getContext('2d');
+            graficoPrediccion = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fechas,
+                    datasets: [{
+                        label: 'Predicciones',
+                        data: predicciones,
+                        borderColor: 'orange',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+            $('#modalDatosPrediccion').show();
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     </script>
 </body>
 </html>

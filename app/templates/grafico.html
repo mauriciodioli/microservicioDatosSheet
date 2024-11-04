@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico de Predicciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Predicciones de Precios de Cierre</h1>
+    <canvas id="grafico" width="400" height="200"></canvas>
+    <br>
+    <a href="/">Regresar</a>
+
+    <script>
+        // Obtener los datos del almacenamiento local
+        debugger;
+        const fechas = JSON.parse(localStorage.getItem('fechas'));
+        const preciosReales = JSON.parse(localStorage.getItem('precios_reales'));
+        const predicciones = JSON.parse(localStorage.getItem('predicciones'));
+
+        const ctx = document.getElementById('grafico').getContext('2d');
+        const grafico = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: [
+                    {
+                        label: 'Precio Real de Cierre',
+                        data: preciosReales,
+                        borderColor: 'blue',
+                        fill: false,
+                    },
+                    {
+                        label: 'Predicciones',
+                        data: predicciones,
+                        borderColor: 'red',
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Fecha'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Precio de Cierre'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

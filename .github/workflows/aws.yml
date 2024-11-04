@@ -16,8 +16,8 @@ jobs:
       cancel-in-progress: true
 
     env:
-      EC2_HOST: ec2-44-220-157-212.compute-1.amazonaws.com
-
+     # EC2_HOST: ec2-44-220-157-212.compute-1.amazonaws.com
+      EC2_HOST: ec2-44-223-20-210.compute-1.amazonaws.com # IMAGEN PRODUCCION
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
