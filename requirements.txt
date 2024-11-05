@@ -17,6 +17,7 @@ flask_sqlalchemy
 flask_cors
 flask_jwt_extended==4.6.0
 flask_marshmallow==1.2.1
+marshmallow-sqlalchemy
 pandas
 gspread
 oauth2client
