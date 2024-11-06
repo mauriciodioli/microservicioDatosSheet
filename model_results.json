@@ -1,0 +1,1 @@
+{"params": {"epochs": 20, "batch_size": 64, "seq_len": 90, "units": 200}, "results": {"mse": 0.030056588761567207, "epochs": 20, "batch_size": 64, "seq_len": 90, "units": 200}}

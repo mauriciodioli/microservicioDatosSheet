@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from tensorflow.keras.layers import Dropout, Dense, LSTM, Input
 import json
 import itertools
-
+import tensorflow as tf
 import os
 
 load_dotenv()
@@ -84,10 +84,19 @@ param_grid = {
 }
 
 # Función para guardar los resultados en un archivo JSON
-def save_results(filename, results):
-    with open(filename, 'w') as f:
-        json.dump(results, f)
+def save_results(filename, params, results):
+    # Crea un diccionario que contenga ambos parámetros
+    data_to_save = {
+        'params': params,
+        'results': results
+    }
 
+    # Abre el archivo y guarda el diccionario en formato JSON
+    with open(filename, 'w') as f:
+        json.dump(data_to_save, f)
+        
+        
+        
 # Función para cargar resultados previos
 def load_results(filename):
     try:
@@ -95,6 +104,29 @@ def load_results(filename):
             return json.load(f)
     except FileNotFoundError:
         return {}
+    
+    
+
+@red_lstn.route('/optimizar_modelo', methods=['POST'])
+def optimizar_modelo():
+     # Obtener datos del request
+    ticker = request.json.get('asset_type', 'AAPL')  # Obtener el ticker del request
+    start_date = request.json.get('start_date', '2024-01-01')  # Fecha de inicio
+    end_date = request.json.get('end_date', '2024-10-31')  # Fecha de fin
+    seq_len =  request.json.get('seq_len')
+    epochs = request.json.get('epochs')
+    batch_size = request.json.get('batch_size')
+    # Llamar a la función de optimización con los parámetros especificados
+    best_params, best_score = optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size)
+
+    return jsonify({
+        "message": "Optimización de hiperparámetros completada.",
+        "best_params": best_params,
+        "best_score": best_score
+    })
+
+
+
 
 # Optimización de hiperparámetros
 def optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size):
@@ -118,14 +150,27 @@ def optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size):
         # Ejecutar el modelo y guardar resultados
         resultado = cargar_datos_con_parametros(ticker, start_date, end_date,params)
         mse = resultado.get('mse')
-        if mse < best_score:
+        training_loss = resultado.get('training_loss')
+        validation_loss = resultado.get('validation_loss')
+        sobreentrenado = resultado.get('sobreentrenado')
+         # Comparar modelos con condiciones adicionales
+        if (mse < best_score and not sobreentrenado and 
+            validation_loss <= training_loss * 1.1):  # Valida que validation_loss no sea mucho mayor a training_loss
+            
             best_score = mse
             best_params = params
+            best_model = resultado.get('model')  # Guardar la instancia del modelo entrenado
             save_results(results_filename, params, resultado)
 
-    print("Mejor configuración encontrada:", best_params)
-    print("Mejor MSE:", best_score)
+        # Guardar el mejor modelo encontrado
+        if best_model:
+            best_model.save('modelo_entrenado.h5')
+            print("Mejor modelo guardado en 'modelo_entrenado.h5'")
+        
+        print("Mejor configuración encontrada:", best_params)
+        print("Mejor MSE:", best_score)
 
+        return best_params, best_score
 
 
 def procesar_y_entrenar_modelo(ticker, start_date, end_date, seq_len, epochs, batch_size, units):
@@ -264,7 +309,10 @@ def procesar_y_entrenar_modelo(ticker, start_date, end_date, seq_len, epochs, ba
         "batch_size": batch_size,
         "seq_len": seq_len,
         "units": units,
-        # Otros resultados
+        "model": model,  # Incluye el modelo en el resultado para guardar el mejor
+        "training_loss": training_loss,
+        "validation_loss": validation_loss,
+        "sobreentrenado": sobreentrenado
     }
 
 def cargar_datos_con_parametros(ticker, start_date, end_date,params):
@@ -288,23 +336,6 @@ def cargar_datos_con_parametros(ticker, start_date, end_date,params):
         "units": units
     }
     
-@red_lstn.route('/optimizar_modelo', methods=['POST'])
-def optimizar_modelo():
-     # Obtener datos del request
-    ticker = request.json.get('asset_type', 'AAPL')  # Obtener el ticker del request
-    start_date = request.json.get('start_date', '2024-01-01')  # Fecha de inicio
-    end_date = request.json.get('end_date', '2024-10-31')  # Fecha de fin
-    seq_len =  request.json.get('seq_len')
-    epochs = request.json.get('epochs')
-    batch_size = request.json.get('batch_size')
-    # Llamar a la función de optimización con los parámetros especificados
-    best_params, best_score = optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size)
-
-    return jsonify({
-        "message": "Optimización de hiperparámetros completada.",
-        "best_params": best_params,
-        "best_score": best_score
-    })
 
 @red_lstn.route('/cargar_datos', methods=['POST'])
 def cargar_datos():
@@ -317,6 +348,7 @@ def cargar_datos():
     batch_size = request.json.get('batch_size')
     # Descargar datos
     df = yf.download(ticker, start=start_date, end=end_date)
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
     # Asegurarse de que se tienen los datos necesarios
     if df.empty or 'Open' not in df.columns or 'Close' not in df.columns:
