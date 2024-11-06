@@ -22,7 +22,7 @@ pandas
 gspread
 oauth2client
 pymysql
-tensorflow==2.16.2
+tensorflow>=2.15.0,<2.16.0
 keras==3.0.0
 matplotlib
 scikit-learn
