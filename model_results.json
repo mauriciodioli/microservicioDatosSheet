@@ -3,10 +3,10 @@
         "epochs": 10,
         "batch_size": 32,
         "seq_len": 30,
-        "units": 100
+        "units": 500
     },
-    "mse": 2.3007198153090522,
-    "training_loss": 0.0010723350569605827,
-    "validation_loss": 0.0004996157367713749,
+    "mse": 1.3505412726107557,
+    "training_loss": 0.0005476901424117386,
+    "validation_loss": 0.00029327848460525274,
     "sobreentrenado": false
 }

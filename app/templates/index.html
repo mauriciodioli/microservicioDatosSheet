@@ -79,6 +79,49 @@
             padding: 10px 20px;
             cursor: pointer;
         }
+
+
+
+
+#guardarCategorias {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+}
+
+#abrirModalCategorias {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+}
+
+
+
+/* Estilos para la tabla */
+#tablaCategorias {
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+
+
     </style>
 </head>
 <body>
@@ -113,17 +156,6 @@
         
     </select>
     
-    <label for="seq_len">seq_len:</label>
-    <input type="text" id="seq_len" name="seq_len" required value="60">
-    
-    <label for="epochs">epochs:</label>
-    <input type="text" id="epochs" name="epochs" required value="39">
-    
-    <label for="batch_size">batch_size:</label>
-    <input type="text" id="batch_size" name="batch_size" required value="128">
-    
-
-
 
     <label for="start_date">Fecha de Inicio:</label>
     <input type="date" id="start_date" name="start_date" required>
@@ -138,46 +170,119 @@
 </form>
 
     <!-- Botón para mostrar los datos del modelo -->
+<button type="button" id="btnAbrirModalCargarDatosModelo">Cargar Datos del Modelo</button>
 <button type="button" id="btnMostrarDatosModelo">Mostrar Datos del Modelo</button>
 <button type="button" id="btnAbrirModalPreciosReales">Ver Precios Reales</button>
 <button type="button" id="btnAbrirModalPredicciones">Ver Predicciones</button>
 <input type="checkbox" id="paradaCheckbox" onchange="enviarParada()" /> Parada
 
 <h1>Predicciones de Precios de Cierre</h1>
+
+
 <!-- Modal para Datos del Modelo -->
-<div id="modalDatosModelo" class="modal">
+<div id="modalCargarDatosModeloRedNeuronal" class="modal">
     <div class="modal-header">
         <h2>Datos del Modelo</h2>
     </div>
+
+    <div class="form-group">
+        <label for="seq_len">Pasos:</label>
+        <input type="text" id="seq_len" name="seq_len" required value="60">
+    </div>
+
+    <div class="form-group">
+        <label for="features">Features:</label>
+        <input type="text" id="features" name="features" required value="2">
+    </div>
+
+    <div class="form-group">
+        <label for="num_categorias">Categorías:</label>
+        <input type="text" id="num_categorias" name="num_categorias" required value="3">
+        <button id="abrirModalCategorias">Ingresar Categorías</button>
+    </div>
+
+    <div class="form-group">
+        <label for="epochs">Epochs:</label>
+        <input type="text" id="epochs" name="epochs" required value="39">
+    </div>
     
-    <p><strong>MSE:</strong> <span id="mseValor"></span></p>
-    <p><strong>Porcentaje de Éxito:</strong> <span id="porcentajeExitoValor"></span></p>
+    <div class="form-group">
+        <label for="batch_size">Batch Size:</label>
+        <input type="text" id="batch_size" name="batch_size" required value="128">
+    </div>
+
+    <div class="form-group">
+        <label for="units">Units:</label>
+        <input type="text" id="units" name="units" required value="500">
+    </div>
    
-    <p><strong>Épocas:</strong> <span id="epochsValor"></span></p>
-    <p><strong>Tamaño de Lote:</strong> <span id="batchSizeValor"></span></p>
-    <p><strong>Número de Parámetros:</strong> <span id="numParametrosValor"></span></p>
-    <p><strong>Número de Datos de Entrenamiento:</strong> <span id="numTrainDataValor"></span></p>
-    <p><strong>Número de Datos de Prueba:</strong> <span id="numTestDataValor"></span></p>
-    <p><strong>Meses de Entrenamiento:</strong> <span id="trainMonthsValor"></span></p>
-    <p><strong>Meses de Prueba:</strong> <span id="testMonthsValor"></span></p>
-    <p><strong>Rango de Precios:</strong> <span id="rangoPreciosValor"></span></p>  <!-- Nuevo párrafo -->
+    <button class="cerrarModal">Cerrar</button>
 
-    <!-- Nuevos valores -->
-    <p><strong>Valor Predicho para el Cierre de Mañana:</strong> <span id="valorPredichoParaMananaCierre"></span></p>
-    <p><strong>Porcentaje de Crecimiento:</strong> <span id="porcentajeCrecimiento"></span></p>
-    <p><strong>Porcentaje de Decrecimiento:</strong> <span id="porcentajeDecrecimiento"></span></p>
+    <!-- Tabla para mostrar las categorías -->
+    <div id="tablaCategorias">
+        <h3>Categorías Ingresadas:</h3>
+        <table id="tablaCategoriasLista">
+            <thead>
+                <tr>
+                    <th>Numero de Categoría</th>
+                    <th>Nombre de Categoría</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas de la tabla se agregarán dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+</div>
 
-    <!-- Nuevas pérdidas y sobreentrenamiento -->
-    <p><strong>Pérdida de Entrenamiento:</strong> <span id="trainingLossValor"></span></p>
-    <p><strong>Pérdida de Validación:</strong> <span id="validationLossValor"></span></p>
-    <p><strong>¿Sobreentrenado?</strong> <span id="sobreentrenadoValor"></span></p>
-
+<!-- Modal para Ingresar Categorías -->
+<div id="modalCategorias" class="modal">
+    <div class="modal-header">
+        <h2>Ingresar Categorías</h2>
+    </div>
+    <form id="formCategorias">
+        <!-- Los inputs de categorías se agregarán dinámicamente aquí -->
+    </form>
+    <button id="guardarCategorias">Guardar Categorías</button>
     <button class="cerrarModal">Cerrar</button>
 </div>
 
 
 
 
+
+
+
+    <!-- Modal para Datos del Modelo -->
+    <div id="modalDatosModelo" class="modal">
+        <div class="modal-header">
+            <h2>Datos del Modelo</h2>
+        </div>
+        
+        <p><strong>MSE:</strong> <span id="mseValor"></span></p>
+        <p><strong>Porcentaje de Éxito:</strong> <span id="porcentajeExitoValor"></span></p>
+    
+        <p><strong>Épocas:</strong> <span id="epochsValor"></span></p>
+        <p><strong>Tamaño de Lote:</strong> <span id="batchSizeValor"></span></p>
+        <p><strong>Número de Parámetros:</strong> <span id="numParametrosValor"></span></p>
+        <p><strong>Número de Datos de Entrenamiento:</strong> <span id="numTrainDataValor"></span></p>
+        <p><strong>Número de Datos de Prueba:</strong> <span id="numTestDataValor"></span></p>
+        <p><strong>Meses de Entrenamiento:</strong> <span id="trainMonthsValor"></span></p>
+        <p><strong>Meses de Prueba:</strong> <span id="testMonthsValor"></span></p>
+        <p><strong>Rango de Precios:</strong> <span id="rangoPreciosValor"></span></p>  <!-- Nuevo párrafo -->
+
+        <!-- Nuevos valores -->
+        <p><strong>Valor Predicho para el Cierre de Mañana:</strong> <span id="valorPredichoParaMananaCierre"></span></p>
+        <p><strong>Porcentaje de Crecimiento:</strong> <span id="porcentajeCrecimiento"></span></p>
+        <p><strong>Porcentaje de Decrecimiento:</strong> <span id="porcentajeDecrecimiento"></span></p>
+
+        <!-- Nuevas pérdidas y sobreentrenamiento -->
+        <p><strong>Pérdida de Entrenamiento:</strong> <span id="trainingLossValor"></span></p>
+        <p><strong>Pérdida de Validación:</strong> <span id="validationLossValor"></span></p>
+        <p><strong>¿Sobreentrenado?</strong> <span id="sobreentrenadoValor"></span></p>
+
+        <button class="cerrarModal">Cerrar</button>
+    </div>
 
     <!-- Modal para Datos Reales -->
     <div id="modalDatos" class="modal">
@@ -190,9 +295,9 @@
         </div>
         <button class="cerrarModal">Cerrar</button>
     </div>
-  
-    <!-- Modal para Predicciones -->
-    <div id="modalDatosPrediccion" class="modal">
+    
+     <!-- Modal para Predicciones -->
+     <div id="modalDatosPrediccion" class="modal">
         <div class="modal-header">
             <h2>Predicciones</h2>
         </div>
@@ -203,6 +308,7 @@
         </div>
         <button class="cerrarModal">Cerrar</button>
     </div>
+ 
 
     <script>
         let graficoReal, graficoPrediccion;
@@ -216,7 +322,16 @@
             $('#btnAbrirModalPreciosReales').click(function() {
                 $('#modalDatos').show();
             });
-        
+
+             // Abrir modal de precios reales al hacer clic en el botón
+             $('#btnMostrarDatosModelo').click(function() {
+                $('#modalDatos').show();
+            });
+            
+            
+            $('#btnAbrirModalCargarDatosModelo').click(function() {
+                $('#modalCargarDatosModeloRedNeuronal').show();
+            });
             // Abrir modal de predicciones al hacer clic en el botón
             $('#btnAbrirModalPredicciones').click(function() {
                 $('#modalDatosPrediccion').show();
@@ -237,7 +352,15 @@
                 var seq_len =  $('#seq_len').val();
                 var epochs =  $('#epochs').val();
                 var batch_size =  $('#batch_size').val();
-        
+                var units = $('units').val();
+                var features = $('features').val();
+                var num_categorias = $('num_categorias').val()
+                // Recoger las categorías
+                var categorias = [];
+                for (var i = 1; i <= num_categorias; i++) {
+                    var categoria = $('#categoria_' + i).val();
+                    categorias.push(categoria);
+                }
                 // Determinar la URL según la acción
                 if (action === 'entrenar') {
                     url = '/cargar_datos';
@@ -260,7 +383,11 @@
                         asset_type: asset_type,
                         epochs: epochs,
                         seq_len: seq_len,
-                        batch_size:batch_size
+                        batch_size:batch_size,
+                        units:units,
+                        features:features,
+                        num_categorias:num_categorias,
+                        categorias: categorias  // Aquí se envían las categorías
                     }),
                     success: function(response) {
                         mostrarDatosReales(response.fechas, response.precios_reales);
@@ -434,6 +561,108 @@
             .catch(error => console.error('Error:', error));
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        document.getElementById('abrirModalCategorias').addEventListener('click', function() {
+            var numCategorias = document.getElementById('num_categorias').value; // Obtiene el número de categorías
+        
+            // Validar que sea un número positivo
+            if (isNaN(numCategorias) || numCategorias <= 0) {
+                alert('Por favor ingresa un número válido de categorías.');
+                return;
+            }
+        
+            // Limpiar el formulario antes de agregar nuevos campos
+            var formCategorias = document.getElementById('formCategorias');
+            formCategorias.innerHTML = '';
+        
+            // Agregar los inputs para cada categoría
+            for (var i = 1; i <= numCategorias; i++) {
+                var label = document.createElement('label');
+                label.setAttribute('for', 'categoria_' + i);
+                label.textContent = 'Categoría ' + i + ':';
+        
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'categoria_' + i;
+                input.name = 'categoria_' + i;
+                input.required = true;
+        
+                formCategorias.appendChild(label);
+                formCategorias.appendChild(input);
+                formCategorias.appendChild(document.createElement('br'));  // Salto de línea
+            }
+        
+            // Abrir el modal de categorías
+            document.getElementById('modalCategorias').style.display = 'block';
+        });
+        
+        document.getElementById('guardarCategorias').addEventListener('click', function() {
+            var numCategorias = document.getElementById('num_categorias').value;
+            var categorias = [];
+            
+            // Obtener los valores de las categorías
+            for (var i = 1; i <= numCategorias; i++) {
+                var categoria = document.getElementById('categoria_' + i).value;
+                categorias.push(categoria);
+            }
+        
+            console.log('Categorías ingresadas:', categorias);
+        
+            // Aquí puedes hacer algo con las categorías, como enviarlas al servidor.
+        
+            // Cerrar el modal de categorías
+            document.getElementById('modalCategorias').style.display = 'none';
+        
+            // Agregar las categorías a la tabla en el primer modal
+            var tabla = document.getElementById('tablaCategoriasLista').getElementsByTagName('tbody')[0];
+            tabla.innerHTML = ''; // Limpiar la tabla antes de agregar nuevas filas
+        
+            categorias.forEach(function(categoria, index) {
+                var row = tabla.insertRow();
+                var cell1 = row.insertCell(0);
+                var cell2 = row.insertCell(1);
+                cell1.textContent = index + 1;  // Número de la categoría
+                cell2.textContent = categoria; // Nombre de la categoría
+            });
+        });
+        
+        // Cerrar modales cuando se haga clic en el botón de cerrar
+        var cerrarModalButtons = document.querySelectorAll('.cerrarModal');
+        cerrarModalButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
     </script>
 </body>
 </html>

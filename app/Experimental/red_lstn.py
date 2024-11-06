@@ -11,6 +11,8 @@ from tensorflow.keras.layers import Dropout, Dense, LSTM, Input
 import json
 import itertools
 import tensorflow as tf
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import to_categorical
 import os
 
 load_dotenv()
@@ -18,7 +20,13 @@ load_dotenv()
 # Definir el Blueprint
 red_lstn = Blueprint('red_lstn', __name__)
 
-
+# Rango de hiperparámetros para optimizar
+param_grid = {
+    'epochs': [10, 20, 39],
+    'batch_size': [32, 64, 128],
+    'seq_len': [30, 60, 90],
+    'units': [100, 400, 500],  # Número de unidades en las capas LSTM
+}
 
 def calcularMeses(train_data, test_data):
     # Calcular diferencia de meses exacta para train_data
@@ -73,15 +81,6 @@ def calcular_mape(precios_reales, predicciones):
     precios_reales, predicciones = np.array(precios_reales), np.array(predicciones)
     return np.mean(np.abs((precios_reales - predicciones) / precios_reales)) * 100
 
-
-
-# Rango de hiperparámetros para optimizar
-param_grid = {
-    'epochs': [10, 20, 39],
-    'batch_size': [32, 64, 128],
-    'seq_len': [30, 60, 90],
-    'units': [100, 400, 500],  # Número de unidades en las capas LSTM
-}
 
 # Función para guardar los resultados en un archivo JSON
 def save_results(results_filename, params, resultado):
@@ -141,8 +140,6 @@ def optimizar_modelo():
         "best_params": best_params,
         "best_score": best_score
     })
-
-
 
 
 # Optimización de hiperparámetros
@@ -357,6 +354,19 @@ def cargar_datos():
     seq_len =  request.json.get('seq_len')
     epochs = request.json.get('epochs')
     batch_size = request.json.get('batch_size')
+    units = request.json.get('units')
+    features = request.json.get('features')
+    num_categorias = request.json.get('num_categorias')
+      # Leer las categorías
+    categorias = request.json.get('categorias', [])  # Obtener el listado de categorías
+
+    # Verificar si se recibieron categorías
+    if categorias:
+         for categoria in categorias:
+        # Hacer algo con cada categoría, por ejemplo, validarlas o almacenarlas
+            print(f"Procesando categoría: {categoria}")
+    else:
+        print("No se recibieron categorías.")
     # Descargar datos
     df = yf.download(ticker, start=start_date, end=end_date)
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -371,6 +381,10 @@ def cargar_datos():
     epochs = int(epochs) # cantidad de pasadas   
     #epochs = 39
     batch_size = int(batch_size) # paquete de datos de entrada
+    units = int(units)
+    features = int(features)
+    num_categorias = int(num_categorias)
+    
     
     # Preprocesamiento de datos
     df.reset_index(inplace=True)
@@ -402,24 +416,16 @@ def cargar_datos():
     X_test, y_test = crear_secuencias(test_data, seq_len)
 
     # Reshape datos para RNN
-    X_train = X_train.reshape((X_train.shape[0], seq_len, 2))
-    X_test = X_test.reshape((X_test.shape[0], seq_len, 2))
+    X_train = X_train.reshape((X_train.shape[0], seq_len, features))
+    X_test = X_test.reshape((X_test.shape[0], seq_len, features))
 
     # Entrenar modelo RNN
+    
        
-    model = Sequential()
-    model.add(LSTM(units=500, return_sequences=True, input_shape=(seq_len, 2)))
-    model.add(Dropout(0.2))  # Añadir Dropout
-    model.add(LSTM(units=500))
-    model.add(Dropout(0.2))  # Añadir Dropout
-    model.add(Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
-   
-   # model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
-    history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test))
+    # Construcción del modelo LSTM para clasificación multiclase
+    # Llamar a la nueva función de entrenamiento
+    model, history, y_test_one_hot = red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num_categorias, epochs, batch_size)
 
-    # Guardar el modelo entrenado
-    model.save('modelo_entrenado.h5')
 
   # Realizar predicciones para los datos de prueba
     y_pred = model.predict(X_test)
@@ -507,6 +513,41 @@ def cargar_datos():
         "validation_loss": validation_loss,
         "sobreentrenado": sobreentrenado  # True si el modelo está sobreentrenado
     })
+
+
+
+def red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num_categorias, epochs, batch_size):
+    # Construcción del modelo LSTM para clasificación multiclase
+    model = Sequential()
+    model.add(LSTM(units=units, return_sequences=True, input_shape=(seq_len, features)))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units=units))
+    model.add(Dropout(0.2))
+    model.add(Dense(num_categorias, activation='softmax'))  # Usar softmax para multiclase
+
+    # Compilación del modelo para clasificación multiclase
+    model.compile(
+        loss='sparse_categorical_crossentropy' if y_train.ndim == 1 else 'categorical_crossentropy', 
+        optimizer=Adam(), 
+        metrics=['accuracy']
+    )
+
+    # Conversión de etiquetas para multiclase (si es necesario)
+    if y_train.ndim == 1:
+        y_train_one_hot = to_categorical(y_train, num_classes=num_categorias)
+        y_test_one_hot = to_categorical(y_test, num_classes=num_categorias)
+    else:
+        y_train_one_hot = y_train
+        y_test_one_hot = y_test
+
+    # Entrenamiento del modelo
+    history = model.fit(X_train, y_train_one_hot, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test_one_hot))
+
+    # Guardar el modelo entrenado
+    model.save('modelo_entrenado.h5')
+
+    return model, history, y_test_one_hot
+
 
 @red_lstn.route('/utilizar_datos_entrenado', methods=['POST'])
 def utilizar_datos_entrenado():
