@@ -25,6 +25,7 @@ from app.controllers.instrumentos import instrumentos
 from app.tokens.token import token
 from app.controllers.get_login import get_login
 from app.Experimental.red_lstn import red_lstn
+import tensorflow as tf
 
 
 load_dotenv()
@@ -74,7 +75,7 @@ def index():
     try:
         
         
-             
+        print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))     
         return render_template('index.html')
     except Exception as e:
         error_message = f"Error en index: {str(e)}"

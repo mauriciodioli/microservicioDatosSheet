@@ -162,15 +162,15 @@ def optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size):
             best_model = resultado.get('model')  # Guardar la instancia del modelo entrenado
             save_results(results_filename, params, resultado)
 
-        # Guardar el mejor modelo encontrado
-        if best_model:
-            best_model.save('modelo_entrenado.h5')
-            print("Mejor modelo guardado en 'modelo_entrenado.h5'")
+            # Guardar el mejor modelo encontrado
+            if best_model:
+                best_model.save('modelo_entrenado.h5')
+                print("Mejor modelo guardado en 'modelo_entrenado.h5'")
         
-        print("Mejor configuración encontrada:", best_params)
-        print("Mejor MSE:", best_score)
+    print("Mejor configuración encontrada:", best_params)
+    print("Mejor MSE:", best_score)
 
-        return best_params, best_score
+    return best_params, best_score
 
 
 def procesar_y_entrenar_modelo(ticker, start_date, end_date, seq_len, epochs, batch_size, units):
@@ -283,9 +283,9 @@ def procesar_y_entrenar_modelo(ticker, start_date, end_date, seq_len, epochs, ba
 
 
     # Imprimir valores relevantes para la depuración
-    print("Fechas:", fechas)
-    print("Precios Reales (Desnormalizados):", precios_reales_desnormalizados.tolist())
-    print("Predicciones:", predicciones)
+   # print("Fechas:", fechas)
+   # print("Precios Reales (Desnormalizados):", precios_reales_desnormalizados.tolist())
+    #print("Predicciones:", predicciones)
     print("MSE:", mse)
     print("Epochs:", epochs)
     print("Batch Size:", batch_size)
@@ -325,16 +325,9 @@ def cargar_datos_con_parametros(ticker, start_date, end_date,params):
     # Modifica la función cargar_datos para aceptar estos parámetros dinámicamente
     resultado = procesar_y_entrenar_modelo(ticker, start_date, end_date, seq_len, epochs, batch_size, units)
 
-    # Asegúrate de que `resultado` contenga el MSE y otros datos relevantes
-    mse = resultado.get('mse', None)  # Cambia aquí dependiendo de cómo esté estructurado `resultado`
     
-    return {
-        "mse": mse,
-        "epochs": epochs,
-        "batch_size": batch_size,
-        "seq_len": seq_len,
-        "units": units
-    }
+    return resultado
+    
     
 
 @red_lstn.route('/cargar_datos', methods=['POST'])
@@ -454,9 +447,9 @@ def cargar_datos():
 
 
     # Imprimir valores relevantes para la depuración
-    print("Fechas:", fechas)
-    print("Precios Reales (Desnormalizados):", precios_reales_desnormalizados.tolist())
-    print("Predicciones:", predicciones)
+    #print("Fechas:", fechas)
+    #print("Precios Reales (Desnormalizados):", precios_reales_desnormalizados.tolist())
+    #print("Predicciones:", predicciones)
     print("MSE:", mse)
     print("Epochs:", epochs)
     print("Batch Size:", batch_size)
