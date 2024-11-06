@@ -22,8 +22,8 @@ pandas
 gspread
 oauth2client
 pymysql
-keras==2.11.0  # o la versión más reciente
 tensorflow==2.16.2
+keras==3.0.0
 matplotlib
 scikit-learn
 
