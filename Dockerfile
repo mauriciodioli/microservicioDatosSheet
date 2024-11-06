@@ -1,21 +1,23 @@
-
-# Usa una imagen base oficial de Python
-FROM python:3.12
+# Usa una imagen base con soporte CUDA (12.0 con Ubuntu 20.04)
+FROM nvidia/cuda:12.0.0-base-ubuntu20.04
 
 # Establece el directorio de trabajo en el contenedor
 WORKDIR /app
+
+# Instala Python y pip
+RUN apt-get update && apt-get install -y python3 python3-pip
 
 # Copia los archivos de requisitos a la imagen
 COPY requirements.txt .
 
 # Instala las dependencias necesarias
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Actualiza pyRofex
-RUN pip install -U pyRofex
+RUN pip3 install -U pyRofex
 
 # Desinstala la librería websocket y luego la vuelve a instalar
-RUN pip uninstall -y websocket && pip install websocket-client
+RUN pip3 uninstall -y websocket && pip3 install websocket-client
 
 # Copia el contenido de tu proyecto a la imagen
 COPY . .

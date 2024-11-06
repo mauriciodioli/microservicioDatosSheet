@@ -77,23 +77,33 @@ def calcular_mape(precios_reales, predicciones):
 
 # Rango de hiperparámetros para optimizar
 param_grid = {
-    'epochs': [10, 20, 30],
+    'epochs': [10, 20, 39],
     'batch_size': [32, 64, 128],
     'seq_len': [30, 60, 90],
-    'units': [100, 200, 500],  # Número de unidades en las capas LSTM
+    'units': [100, 400, 500],  # Número de unidades en las capas LSTM
 }
 
 # Función para guardar los resultados en un archivo JSON
-def save_results(filename, params, results):
-    # Crea un diccionario que contenga ambos parámetros
+def save_results(results_filename, params, resultado):
+    # Extraer los valores deseados de 'resultado'
+    mse = resultado.get('mse')
+    training_loss = resultado.get('training_loss')
+    validation_loss = resultado.get('validation_loss')
+    sobreentrenado = resultado.get('sobreentrenado')
+
+    # Crear el diccionario con los datos a guardar
     data_to_save = {
         'params': params,
-        'results': results
+        'mse': mse,
+        'training_loss': training_loss,
+        'validation_loss': validation_loss,
+        'sobreentrenado': sobreentrenado
     }
+    
+    # Guardar los datos en un archivo JSON
+    with open(results_filename, 'w') as f:
+        json.dump(data_to_save, f, indent=4)
 
-    # Abre el archivo y guarda el diccionario en formato JSON
-    with open(filename, 'w') as f:
-        json.dump(data_to_save, f)
         
         
         
@@ -101,10 +111,17 @@ def save_results(filename, params, results):
 def load_results(filename):
     try:
         with open(filename, 'r') as f:
-            return json.load(f)
+            # Verifica si el archivo está vacío antes de intentar cargarlo
+            content = f.read().strip()
+            if not content:  # Si está vacío, retorna un diccionario vacío
+                return {}
+            return json.loads(content)
     except FileNotFoundError:
         return {}
-    
+    except json.JSONDecodeError as e:
+        print(f"Error decodificando JSON: {e}")
+        return {}
+
     
 
 @red_lstn.route('/optimizar_modelo', methods=['POST'])
@@ -146,7 +163,8 @@ def optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size):
         params = {'epochs': epochs, 'batch_size': batch_size, 'seq_len': seq_len, 'units': units}
         if str(params) in previous_results:
             continue
-
+        # Imprimir los parámetros actuales
+        print(f"Ejecutando con los parámetros: {params}")
         # Ejecutar el modelo y guardar resultados
         resultado = cargar_datos_con_parametros(ticker, start_date, end_date,params)
         mse = resultado.get('mse')
