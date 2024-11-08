@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  DEPLOYMENT_VERSION: "ms202401i"
+  DEPLOYMENT_VERSION: "ms202501"
 
 jobs:
   deploy-to-cluster:
@@ -59,3 +59,40 @@ jobs:
         run: |
           echo "Verifying Docker image push..."
           docker images | grep ms202401i
+
+
+
+
+      - name: Stop and remove existing container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker stop ${{ env.DEPLOYMENT_VERSION }} || true
+            docker rm ${{ env.DEPLOYMENT_VERSION }} || true
+
+      - name: Remove existing Docker image
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+                IMAGE_ID=$(docker images -q ${{ github.repository_owner }}/ms202401i)
+                echo "IMAGE_ID is $IMAGE_ID"  # Paso de depuración agregado
+                if [ ! -z "$IMAGE_ID" ]; then
+                  docker rmi $IMAGE_ID
+                fi
+          
+    
+      - name: Copy Docker image to AWS instance
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull docker.io/${{ github.repository_owner }}/ms202401i:${{ github.sha }}
+            docker run -d --name ${{ env.DEPLOYMENT_VERSION }} -p 5002:5001 --restart always --gpus all docker.io/${{ github.repository_owner }}/ms202401i:${{ github.sha }}

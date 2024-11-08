@@ -20,13 +20,6 @@ load_dotenv()
 # Definir el Blueprint
 red_lstn = Blueprint('red_lstn', __name__)
 
-# Rango de hiperparámetros para optimizar
-param_grid = {
-    'epochs': [10, 20, 39],
-    'batch_size': [32, 64, 128],
-    'seq_len': [30, 60, 90],
-    'units': [100, 400, 500],  # Número de unidades en las capas LSTM
-}
 
 def calcularMeses(train_data, test_data):
     # Calcular diferencia de meses exacta para train_data
@@ -132,8 +125,18 @@ def optimizar_modelo():
     seq_len =  request.json.get('seq_len')
     epochs = request.json.get('epochs')
     batch_size = request.json.get('batch_size')
+    param_grid_list = request.json.get('param_grid')
+  
+
+    # Filtrar los números de las listas de param_grid
+    param_grid = {
+        'epochs': [int(value) for value in param_grid_list[0] if value.isdigit()],
+        'batch_size': [int(value) for value in param_grid_list[1] if value.isdigit()],
+        'seq_len': [int(value) for value in param_grid_list[2] if value.isdigit()],
+        'units': [int(value) for value in param_grid_list[3] if value.isdigit()]
+    }
     # Llamar a la función de optimización con los parámetros especificados
-    best_params, best_score = optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size)
+    best_params, best_score = optimize_model(param_grid,ticker, start_date, end_date, seq_len, epochs, batch_size)
 
     return jsonify({
         "message": "Optimización de hiperparámetros completada.",
@@ -143,7 +146,7 @@ def optimizar_modelo():
 
 
 # Optimización de hiperparámetros
-def optimize_model(ticker, start_date, end_date, seq_len, epochs, batch_size):
+def optimize_model(param_grid,ticker, start_date, end_date, seq_len, epochs, batch_size):
 
     best_score = float('inf')
     best_params = None

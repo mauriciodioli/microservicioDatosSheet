@@ -135,6 +135,8 @@ th {
 
 
 
+
+
     </style>
 </head>
 <body>
@@ -334,8 +336,72 @@ th {
     </div>
  
 
+
+
+
+
+
+
+
+
+
+ <!-- Modal para cargar parametros para optimizar modelo -->
+ <div id="optimizeModal" class="modal">
+    <div class="modal-header">
+        <h2>Optimizar Modelo</h2>
+    </div>
+    <label for="num_filas_OptimizaModelos">Filas:</label>
+    <input type="text" id="num_filas_OptimizaModelos" name="num_filas_OptimizaModelos" required value="4">
+
+    <label for="num_columnas_OptimizaModelos">Columnas:</label>
+    <input type="text" id="num_columnas_OptimizaModelos" name="num_columnas_OptimizaModelos" required value="3">
+    <button id="crearMatrizOptimizaModelos">Crear Matriz</button>
+
+    <form id="formOptimizaModelos">
+        <!-- Los inputs de categorías se agregarán dinámicamente aquí -->
+    </form>
+    <button id="guardarCategoriasOptimizaModelo">Guardar Matriz</button>
+    <button class="cerrarModal">Cerrar</button>
+</div>
+
+
+
+
+
+
+
+
     <script>
         let graficoReal, graficoPrediccion;
+        let param_grid = [];
+        document.getElementById('guardarCategoriasOptimizaModelo').addEventListener('click', function() {
+            param_grid = []; // Limpiar `param_grid` antes de agregar valores nuevos
+            const form = document.getElementById("formOptimizaModelos");
+            const filas = form.querySelectorAll(".fila");
+        
+            // Obtener los valores de cada fila
+            filas.forEach(fila => {
+                const inputs = fila.querySelectorAll("input");
+                const filaValores = [];
+        
+                // Obtener los valores de cada input en la fila
+                inputs.forEach(input => {
+                    filaValores.push(input.value);
+                });
+                param_grid.push(filaValores);
+            });
+        
+            console.log('param_grid ingresadas:', param_grid);
+        
+            // Cerrar el modal de categorías
+            document.getElementById('optimizeModal').style.display = 'none';
+        });
+        
+
+
+
+
+
 
         $(document).ready(function() {
             // Hacer los modales redimensionables y movibles           
@@ -392,11 +458,14 @@ th {
                     url = '/utilizar_datos_entrenado';
                 } else if (action === 'optimiza') {
                     url = '/optimizar_modelo';
+
+                    param_grid =param_grid;
                 } else {
                     console.error('Acción no reconocida:', action);
                     return;
                 }
         
+                // Envío de los datos al servidor con AJAX
                 $.ajax({
                     url: url,
                     type: 'POST',
@@ -407,11 +476,12 @@ th {
                         asset_type: asset_type,
                         epochs: epochs,
                         seq_len: seq_len,
-                        batch_size:batch_size,
-                        units:units,
-                        features:features,
-                        num_categorias:num_categorias,
-                        categorias: categorias  // Aquí se envían las categorías
+                        batch_size: batch_size,
+                        units: units,
+                        features: features,
+                        num_categorias: num_categorias,
+                        categorias: categorias,
+                        param_grid: param_grid  // Enviar la matriz de `param_grid`
                     }),
                     success: function(response) {
                         mostrarDatosReales(response.fechas, response.precios_reales);
@@ -687,6 +757,109 @@ th {
                 this.closest('.modal').style.display = 'none';
             });
         });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//modal optimiza modelo
+document.getElementById("action").addEventListener("change", function() {
+     if (this.value === "optimiza") { 
+       
+        $('#optimizeModal').show();
+    } 
+    
+    
+    }); 
+
+
+document.getElementById("crearMatrizOptimizaModelos").addEventListener("click", function() {
+    // Obtener el número de filas y columnas
+    const numFilas = parseInt(document.getElementById("num_filas_OptimizaModelos").value) || 1;
+    const numColumnas = parseInt(document.getElementById("num_columnas_OptimizaModelos").value) || 1;
+  
+    // Limpiar el formulario
+    const form = document.getElementById("formOptimizaModelos");
+    form.innerHTML = "";
+    // Crear el título de la primera columna
+    const tituloParamGrid = document.createElement("div");
+    tituloParamGrid.textContent = "param_grid";
+    tituloParamGrid.style.fontWeight = "bold";
+    form.appendChild(tituloParamGrid);
+
+
+    const valoresPredeterminados = [
+                                        [10, 20, 39],
+                                        [32, 64, 128],
+                                        [30, 60, 90],
+                                        [100, 400, 500]
+                                    ];
+
+
+        // Crear los labels y los inputs de la matriz
+    for (let i = 0; i < numFilas; i++) {
+        const fila = document.createElement("div");
+        fila.classList.add("fila");
+    
+        // Crear el label
+        const label = document.createElement("label");
+        label.textContent = `Fila ${i + 1}:`;
+        label.setAttribute("for", `categoria_fila_${i}`);
+        fila.appendChild(label);
+    
+        // Crear el input de la primera columna
+        const inputParamGrid = document.createElement("input");
+        inputParamGrid.type = "text";
+        inputParamGrid.name = `categoria[${i}][0]`;
+        inputParamGrid.id = `categoria_fila_${i}_columna_0`;
+        inputParamGrid.placeholder = "param_grid";
+        if (i === 0) {
+        inputParamGrid.value = "epochs:";
+        } else if (i === 1) {
+        inputParamGrid.value = "batch_size:";
+        } else if (i === 2) {
+        inputParamGrid.value = "seq_len:";
+        } else if (i === 3) {
+        inputParamGrid.value = "units:";
+        }
+        fila.appendChild(inputParamGrid);
+    
+        // Crear los inputs de las siguientes columnas y cargar los valores correspondientes
+        for (let j = 1; j < numColumnas + 1; j++) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = `categoria[${i}][${j}]`;
+        input.id = `categoria_fila_${i}_columna_${j}`;
+        input.value = valoresPredeterminados[i][j - 1]; // Ajustar el índice de `valoresPredeterminados` a `j - 1`
+        input.style.marginBottom = "5px"; // Añadir margen inferior al input
+        fila.appendChild(input);
+        }
+        form.appendChild(fila);
+    }
+    });
+  
+      
+      
+      
+      
+
+
+
     </script>
 </body>
 </html>
