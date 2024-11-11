@@ -367,13 +367,12 @@ def cargar_datos():
     units = request.json.get('units')
     features = request.json.get('features')
     num_categorias = request.json.get('num_categorias')
-      # Leer las categorías
+    
+    # Leer las categorías
     categorias = request.json.get('categorias', [])  # Obtener el listado de categorías
     valores = request.json.get('valores', [])  # Obtener el listado de valores asociados a cada categoría
-   
 
-     # Verificar si se recibieron categorías
-    # Si se recibieron categorías, mapeamos a índices
+    # Verificar si se recibieron categorías
     if categorias:
         # Asignar la categoría y el valor a cada índice
         categoria_indices = {categoria: (idx, valor) for idx, (categoria, valor) in enumerate(zip(categorias, valores))}
@@ -389,17 +388,13 @@ def cargar_datos():
     # Asegurarse de que se tienen los datos necesarios
     if df.empty or 'Open' not in df.columns or 'Close' not in df.columns:
         return jsonify({"error": "No se encontraron datos para el ticker proporcionado."}), 404
-    
-    
-    
+
     seq_len = int(seq_len)  # número de pasos de tiempo
     epochs = int(epochs) # cantidad de pasadas   
-    #epochs = 39
     batch_size = int(batch_size) # paquete de datos de entrada
     units = int(units)
     features = int(features)
     num_categorias = int(num_categorias)
-    
     
     # Preprocesamiento de datos
     df.reset_index(inplace=True)
@@ -419,29 +414,36 @@ def cargar_datos():
     # Calcular cuántos datos son el 80% y el 20%
     num_train_data = len(train_data)
     num_test_data = len(test_data)
- 
-   
+
     # Calcular cuántos meses representa cada conjunto 
     train_months, test_months = calcularMeses(train_data, test_data)
+    
     # Calcular rango de precios
-    rango_precios_desnormalizado = rangoPrecioDesnormalizado(test_data,scaler) 
+    rango_precios_desnormalizado = rangoPrecioDesnormalizado(test_data, scaler)
 
-   
+    # Crear secuencias
     X_train, y_train = crear_secuencias(train_data, seq_len)
     X_test, y_test = crear_secuencias(test_data, seq_len)
 
-# Verificar las etiquetas originales antes de mapear
+    # Verificar las etiquetas originales antes de mapear
     print("Ejemplos originales de y_train:", y_train[:5])  # Mostrar las primeras etiquetas de y_train
     print("Ejemplos originales de y_test:", y_test[:5])  # Mostrar las primeras etiquetas de y_test
 
-
-  # Asignar categorías con un margen de tolerancia
+    # Asignar categorías con un margen de tolerancia
     y_train_categorias = [asignar_categoria(valor, categoria_indices) for valor in y_train]
     y_test_categorias = [asignar_categoria(valor, categoria_indices) for valor in y_test]
+
+    # Imprimir las categorías asignadas
+    print("Categorías asignadas a y_train:", y_train_categorias[:5])
+    print("Categorías asignadas a y_test:", y_test_categorias[:5])
 
     # Mapear a índices
     y_train_mapped = [categoria_indices.get(categoria, (-1,))[0] for categoria in y_train_categorias]
     y_test_mapped = [categoria_indices.get(categoria, (-1,))[0] for categoria in y_test_categorias]
+
+    # Verificar los valores mapeados
+    print("Valores mapeados de y_train:", y_train_mapped[:5])
+    print("Valores mapeados de y_test:", y_test_mapped[:5])
 
     # Verificar si algún valor fue asignado a -1
     if -1 in y_train_mapped:
@@ -466,7 +468,6 @@ def cargar_datos():
     print("Ejemplos de y_test_one_hot:", y_test_one_hot[:5])  # Ver primeros ejemplos
 
 
-       
     # Construcción del modelo LSTM para clasificación multiclase
     # Llamar a la nueva función de entrenamiento
     model, history, y_test_one_hot = red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num_categorias,categoria_indices, epochs, batch_size)
