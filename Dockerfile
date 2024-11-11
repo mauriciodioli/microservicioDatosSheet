@@ -1,5 +1,6 @@
 # Usa una imagen base con soporte CUDA (12.0 con Ubuntu 20.04)
-FROM nvidia/cuda:12.0.0-base-ubuntu20.04
+#FROM nvidia/cuda:12.0.0-base-ubuntu20.04
+FROM python:3.12.4
 
 # Establece el directorio de trabajo en el contenedor
 WORKDIR /app

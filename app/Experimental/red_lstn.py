@@ -63,11 +63,11 @@ def precioReal(y_test,scaler):
 
  # Preparar datos para RNN
 def crear_secuencias(data, seq_len):
-        X, y = [], []
-        for i in range(len(data) - seq_len):
-            X.append(data.iloc[i:i + seq_len][['Apertura', 'Cierre']].values)
-            y.append(data.iloc[i + seq_len]['Cierre'])
-        return np.array(X), np.array(y)
+    X, y = [], []
+    for i in range(len(data) - seq_len):
+        X.append(data[['Apertura', 'Cierre']].iloc[i:i+seq_len].values)
+        y.append(data['Cierre'].iloc[i + seq_len])
+    return np.array(X), np.array(y)
 
 
 def calcular_mape(precios_reales, predicciones):
@@ -347,7 +347,11 @@ def cargar_datos_con_parametros(ticker, start_date, end_date,params):
     return resultado
     
     
-# Función de categorización
+def asignar_categoria(valor, categoria_indices):
+    for categoria, (idx, limite) in categoria_indices.items():
+        if valor <= limite:
+            return categoria
+    return 'lateral'  # Por defecto si el valor supera todos los límites
 
 
 
@@ -371,11 +375,9 @@ def cargar_datos():
      # Verificar si se recibieron categorías
     # Si se recibieron categorías, mapeamos a índices
     if categorias:
-         # Asignar la categoría a cada valor recibido
-    
-    
-        categoria_indices = {categoria: idx for idx, categoria in enumerate(categorias)}
-        print("Categorías recibidas y mapeadas:", categoria_indices)  # Imprimir categorías y sus índices
+        # Asignar la categoría y el valor a cada índice
+        categoria_indices = {categoria: (idx, valor) for idx, (categoria, valor) in enumerate(zip(categorias, valores))}
+        print("Categorías recibidas y mapeadas con los valores correctos:", categoria_indices)  # Imprimir categorías y sus índices
     else:
         categoria_indices = {}  # Si no se reciben categorías, dejamos el diccionario vacío
         print("No se recibieron categorías.")  # Imprimir mensaje en caso de no recibir categorías
@@ -433,27 +435,27 @@ def cargar_datos():
     print("Ejemplos originales de y_test:", y_test[:5])  # Mostrar las primeras etiquetas de y_test
 
 
-    # Reshape datos para RNN
-    X_train = X_train.reshape((X_train.shape[0], seq_len, features))
-    X_test = X_test.reshape((X_test.shape[0], seq_len, features))
+  # Asignar categorías con un margen de tolerancia
+    y_train_categorias = [asignar_categoria(valor, categoria_indices) for valor in y_train]
+    y_test_categorias = [asignar_categoria(valor, categoria_indices) for valor in y_test]
 
-     # Asignar las categorías numéricas a y_train y y_test
-    y_train_mapped = [categoria_indices.get(categoria, -1) for categoria in y_train]  # Mapear etiquetas de 'y_train'
-    y_test_mapped = [categoria_indices.get(categoria, -1) for categoria in y_test]  # Mapear etiquetas de 'y_test'
+    # Mapear a índices
+    y_train_mapped = [categoria_indices.get(categoria, (-1,))[0] for categoria in y_train_categorias]
+    y_test_mapped = [categoria_indices.get(categoria, (-1,))[0] for categoria in y_test_categorias]
 
-    # Verificar si algún valor fue asignado a -1, lo que indica que no está en las categorías
+    # Verificar si algún valor fue asignado a -1
     if -1 in y_train_mapped:
         print("¡Alerta! Algunas etiquetas en y_train no están en categoria_indices.")
     if -1 in y_test_mapped:
         print("¡Alerta! Algunas etiquetas en y_test no están en categoria_indices.")
 
-    # Verificar el mapeo de las categorías antes de continuar
-    print("Ejemplos de y_train (mapeados):", y_train_mapped[:5])  # Mostrar ejemplos de las primeras etiquetas mapeadas
-    print("Ejemplos de y_test (mapeados):", y_test_mapped[:5])  # Mostrar ejemplos de las primeras etiquetas mapeadas
-
-    # Convertir las etiquetas a one-hot encoding
+    # Convertir a One-Hot Encoding
     y_train_one_hot = to_categorical(y_train_mapped, num_classes=num_categorias)
     y_test_one_hot = to_categorical(y_test_mapped, num_classes=num_categorias)
+
+    # Verificar ejemplos de One-Hot
+    print("Ejemplos de y_train_one_hot:", y_train_one_hot[:5])
+    print("Ejemplos de y_test_one_hot:", y_test_one_hot[:5])
 
     # Verificar las formas de las etiquetas one-hot
     print("Forma de y_train:", len(y_train))

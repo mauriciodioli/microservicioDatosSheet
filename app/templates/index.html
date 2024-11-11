@@ -713,38 +713,48 @@ th {
             var formCategorias = document.getElementById('formCategorias');
             formCategorias.innerHTML = '';
         
+            // Definir los valores por defecto para cada categoría
+            var categoriasDefault = ['sube', 'baja', 'lateral'];
+            var valoresDefault = [0.3, 0.5, 1];
+            // Agregar los inputs para cada categoría y su valor asociado
             // Agregar los inputs para cada categoría y su valor asociado
             for (var i = 1; i <= numCategorias; i++) {
                 // Crear un contenedor para la categoría y su valor
                 var container = document.createElement('div');
                 container.classList.add('categoria-container');
-        
+
                 var labelCategoria = document.createElement('label');
                 labelCategoria.setAttribute('for', 'categoria_' + i);
                 labelCategoria.textContent = 'Categoría ' + i + ':';
-        
+
                 var inputCategoria = document.createElement('input');
                 inputCategoria.type = 'text';
                 inputCategoria.id = 'categoria_' + i;
                 inputCategoria.name = 'categoria_' + i;
                 inputCategoria.required = true;
-        
+
+                // Asignar valor por defecto de categoría si existe en el array
+                inputCategoria.value = categoriasDefault[i - 1] || ''; // Usar valores por defecto o vacío
+
                 var labelValor = document.createElement('label');
                 labelValor.setAttribute('for', 'valor_' + i);
                 labelValor.textContent = 'Valor de Categoría ' + i + ':';
-        
+
                 var inputValor = document.createElement('input');
                 inputValor.type = 'number';
                 inputValor.id = 'valor_' + i;
                 inputValor.name = 'valor_' + i;
                 inputValor.required = true;
-        
+
+                // Asignar valor por defecto de categoría si existe en el array
+                inputValor.value = valoresDefault[i - 1] || ''; // Usar valores por defecto o vacío
+
                 // Agregar los elementos al contenedor
                 container.appendChild(labelCategoria);
                 container.appendChild(inputCategoria);
                 container.appendChild(labelValor);
                 container.appendChild(inputValor);
-        
+
                 // Agregar el contenedor al formulario
                 formCategorias.appendChild(container);
             }
