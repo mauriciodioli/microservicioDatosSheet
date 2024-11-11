@@ -5,6 +5,10 @@ FROM python:3.12
 # Establece el directorio de trabajo en el contenedor
 WORKDIR /app
 
+# Asegúrate de que python y pip apunten a Python 3.12
+RUN ln -sf /usr/local/bin/python3.12 /usr/local/bin/python
+RUN ln -sf /usr/local/bin/pip3.12 /usr/local/bin/pip
+
 # Instala Python y pip
 RUN apt-get update && apt-get install -y python3 python3-pip
 
