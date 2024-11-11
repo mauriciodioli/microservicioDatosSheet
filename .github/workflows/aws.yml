@@ -16,8 +16,8 @@ jobs:
       cancel-in-progress: true
 
     env:
-     # EC2_HOST: ec2-44-220-157-212.compute-1.amazonaws.com
       EC2_HOST: ec2-44-223-20-210.compute-1.amazonaws.com # IMAGEN PRODUCCION
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -48,12 +48,16 @@ jobs:
           echo "Verifying Docker Hub login..."
           docker info
 
-      - name: Build and Push to Docker Hub
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/ms202401i:latest
+      - name: Build and Push to Docker Hub (if needed)
+        id: build_and_push
+        run: |
+          if ! docker pull ${{ secrets.DOCKER_USERNAME }}/ms202401i:latest; then
+            echo "Image not found, building and pushing to Docker Hub..."
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/ms202401i:latest .
+            docker push ${{ secrets.DOCKER_USERNAME }}/ms202401i:latest
+          else
+            echo "Image found in Docker Hub, skipping build."
+          fi
 
       - name: Verify Docker Image Push
         run: |
@@ -78,7 +82,7 @@ jobs:
            key: ${{ secrets.SSH_PRIVATE_KEY }}
            script: |
                  IMAGE_ID=$(docker images -q ${{ github.repository_owner }}/ms202401i)
-                 echo "IMAGE_ID is $IMAGE_ID"  # Paso de depuración agregado
+                 echo "IMAGE_ID is $IMAGE_ID"
                  if [ ! -z "$IMAGE_ID" ]; then
                    docker rmi $IMAGE_ID
                  fi
@@ -90,5 +94,5 @@ jobs:
            username: ubuntu
            key: ${{ secrets.SSH_PRIVATE_KEY }}
            script: |
-             docker pull docker.io/${{ github.repository_owner }}/ms202401i:${{ github.sha }}
-             docker run -d --name ${{ env.DEPLOYMENT_VERSION }} -p 5002:5001 --restart always --gpus all docker.io/${{ github.repository_owner }}/ms202401i:${{ github.sha }}
+             docker pull docker.io/${{ github.repository_owner }}/ms202401i:latest
+             docker run -d --name ${{ env.DEPLOYMENT_VERSION }} -p 5002:5001 --restart always --gpus all docker.io/${{ github.repository_owner }}/ms202401i:latest
