@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  DEPLOYMENT_VERSION: "ms202501"
+  DEPLOYMENT_VERSION: "ms202401"
 
 jobs:
   deploy-to-cluster:

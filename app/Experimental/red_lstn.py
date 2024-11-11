@@ -347,16 +347,27 @@ def cargar_datos_con_parametros(ticker, start_date, end_date,params):
     return resultado
     
     
-def asignar_categoria(valor, categoria_indices):
-    # Ajustar los rangos correctamente según el valor
-    if valor <= categoria_indices['sube'][1]:  # 0.3 es el límite superior para 'sube'
-        return 'sube'
-    elif valor <= categoria_indices['baja'][1]:  # 0.5 es el límite superior para 'baja'
-        return 'baja'
-    elif valor <= categoria_indices['lateral'][1]:  # 1 es el límite superior para 'lateral'
-        return 'lateral'
-    else:
-        return 'lateral'  # Asumimos que todo lo que sea mayor que 1 es 'lateral'
+def asignar_categoria(y_values, categoria_indices):
+    # Lista para almacenar las categorías asignadas
+    categorias_asignadas = []
+
+    # Iterar sobre cada valor en y_values
+    for valor in y_values:
+        # Ajustar los rangos correctamente según el valor
+        if valor <= categoria_indices['sube'][1]:  # 0.3 es el límite superior para 'sube'
+            categoria = 'sube'
+        elif valor <= categoria_indices['baja'][1]:  # 0.5 es el límite superior para 'baja'
+            categoria = 'baja'
+        elif valor <= categoria_indices['lateral'][1]:  # 1 es el límite superior para 'lateral'
+            categoria = 'lateral'
+        else:
+            categoria = 'lateral'  # Asumimos que todo lo que sea mayor que 1 es 'lateral'
+        
+        # Agregar la categoría a la lista
+        categorias_asignadas.append(categoria)
+
+    # Devolver la lista de categorías asignadas
+    return categorias_asignadas
 
 @red_lstn.route('/cargar_datos', methods=['POST'])
 def cargar_datos():
@@ -433,8 +444,8 @@ def cargar_datos():
     print("Ejemplos originales de y_test:", y_test[:5])  # Mostrar las primeras etiquetas de y_test
 
     # Asignar categorías con un margen de tolerancia
-    y_train_categorias = [asignar_categoria(valor, categoria_indices) for valor in y_train]
-    y_test_categorias = [asignar_categoria(valor, categoria_indices) for valor in y_test]
+    y_train_categorias = asignar_categoria(y_train, categoria_indices)
+    y_test_categorias = asignar_categoria(y_test, categoria_indices)
 
     # Imprimir las categorías asignadas
     print("Categorías asignadas a y_train:", y_train_categorias[:5])
