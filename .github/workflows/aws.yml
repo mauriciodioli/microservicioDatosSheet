@@ -94,5 +94,5 @@ jobs:
            username: ubuntu
            key: ${{ secrets.SSH_PRIVATE_KEY }}
            script: |
-             docker pull docker.io/${{ github.repository_owner }}/ms202401i:latest
+             docker pull docker.io/${{ github.repository_owner }}/ms202401i:${{ github.sha }}
              docker run -d --name ${{ env.DEPLOYMENT_VERSION }} -p 5002:5001 --restart always docker.io/${{ github.repository_owner }}/ms202401i:latest
