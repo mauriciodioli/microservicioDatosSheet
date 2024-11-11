@@ -348,12 +348,15 @@ def cargar_datos_con_parametros(ticker, start_date, end_date,params):
     
     
 def asignar_categoria(valor, categoria_indices):
-    for categoria, (idx, limite) in categoria_indices.items():
-        if valor <= limite:
-            return categoria
-    return 'lateral'  # Por defecto si el valor supera todos los límites
-
-
+    # Ajustar los rangos correctamente según el valor
+    if valor <= categoria_indices['sube'][1]:  # 0.3 es el límite superior para 'sube'
+        return 'sube'
+    elif valor <= categoria_indices['baja'][1]:  # 0.5 es el límite superior para 'baja'
+        return 'baja'
+    elif valor <= categoria_indices['lateral'][1]:  # 1 es el límite superior para 'lateral'
+        return 'lateral'
+    else:
+        return 'lateral'  # Asumimos que todo lo que sea mayor que 1 es 'lateral'
 
 @red_lstn.route('/cargar_datos', methods=['POST'])
 def cargar_datos():
