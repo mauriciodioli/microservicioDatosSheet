@@ -347,6 +347,9 @@ def cargar_datos_con_parametros(ticker, start_date, end_date,params):
     return resultado
     
     
+# Función de categorización
+
+
 
 @red_lstn.route('/cargar_datos', methods=['POST'])
 def cargar_datos():
@@ -362,14 +365,21 @@ def cargar_datos():
     num_categorias = request.json.get('num_categorias')
       # Leer las categorías
     categorias = request.json.get('categorias', [])  # Obtener el listado de categorías
+    valores = request.json.get('valores', [])  # Obtener el listado de valores asociados a cada categoría
+   
 
-    # Verificar si se recibieron categorías
+     # Verificar si se recibieron categorías
+    # Si se recibieron categorías, mapeamos a índices
     if categorias:
-         for categoria in categorias:
-        # Hacer algo con cada categoría, por ejemplo, validarlas o almacenarlas
-            print(f"Procesando categoría: {categoria}")
+         # Asignar la categoría a cada valor recibido
+    
+    
+        categoria_indices = {categoria: idx for idx, categoria in enumerate(categorias)}
+        print("Categorías recibidas y mapeadas:", categoria_indices)  # Imprimir categorías y sus índices
     else:
-        print("No se recibieron categorías.")
+        categoria_indices = {}  # Si no se reciben categorías, dejamos el diccionario vacío
+        print("No se recibieron categorías.")  # Imprimir mensaje en caso de no recibir categorías
+
     # Descargar datos
     df = yf.download(ticker, start=start_date, end=end_date)
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -418,16 +428,46 @@ def cargar_datos():
     X_train, y_train = crear_secuencias(train_data, seq_len)
     X_test, y_test = crear_secuencias(test_data, seq_len)
 
+# Verificar las etiquetas originales antes de mapear
+    print("Ejemplos originales de y_train:", y_train[:5])  # Mostrar las primeras etiquetas de y_train
+    print("Ejemplos originales de y_test:", y_test[:5])  # Mostrar las primeras etiquetas de y_test
+
+
     # Reshape datos para RNN
     X_train = X_train.reshape((X_train.shape[0], seq_len, features))
     X_test = X_test.reshape((X_test.shape[0], seq_len, features))
 
-    # Entrenar modelo RNN
-    
+     # Asignar las categorías numéricas a y_train y y_test
+    y_train_mapped = [categoria_indices.get(categoria, -1) for categoria in y_train]  # Mapear etiquetas de 'y_train'
+    y_test_mapped = [categoria_indices.get(categoria, -1) for categoria in y_test]  # Mapear etiquetas de 'y_test'
+
+    # Verificar si algún valor fue asignado a -1, lo que indica que no está en las categorías
+    if -1 in y_train_mapped:
+        print("¡Alerta! Algunas etiquetas en y_train no están en categoria_indices.")
+    if -1 in y_test_mapped:
+        print("¡Alerta! Algunas etiquetas en y_test no están en categoria_indices.")
+
+    # Verificar el mapeo de las categorías antes de continuar
+    print("Ejemplos de y_train (mapeados):", y_train_mapped[:5])  # Mostrar ejemplos de las primeras etiquetas mapeadas
+    print("Ejemplos de y_test (mapeados):", y_test_mapped[:5])  # Mostrar ejemplos de las primeras etiquetas mapeadas
+
+    # Convertir las etiquetas a one-hot encoding
+    y_train_one_hot = to_categorical(y_train_mapped, num_classes=num_categorias)
+    y_test_one_hot = to_categorical(y_test_mapped, num_classes=num_categorias)
+
+    # Verificar las formas de las etiquetas one-hot
+    print("Forma de y_train:", len(y_train))
+    print("Forma de y_train_one_hot:", y_train_one_hot.shape)
+    print("Ejemplos de y_train_one_hot:", y_train_one_hot[:5])  # Ver primeros ejemplos
+    print("Forma de y_test:", len(y_test))
+    print("Forma de y_test_one_hot:", y_test_one_hot.shape)
+    print("Ejemplos de y_test_one_hot:", y_test_one_hot[:5])  # Ver primeros ejemplos
+
+
        
     # Construcción del modelo LSTM para clasificación multiclase
     # Llamar a la nueva función de entrenamiento
-    model, history, y_test_one_hot = red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num_categorias, epochs, batch_size)
+    model, history, y_test_one_hot = red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num_categorias,categoria_indices, epochs, batch_size)
 
 
   # Realizar predicciones para los datos de prueba
@@ -519,29 +559,39 @@ def cargar_datos():
 
 
 
-def red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num_categorias, epochs, batch_size):
+
+def red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num_categorias,categoria_indices, epochs, batch_size):
+    
+    print("Categorías recibidas y mapeadas:", categoria_indices)  # Imprimir categorías y sus índices
     # Construcción del modelo LSTM para clasificación multiclase
     model = Sequential()
     model.add(LSTM(units=units, return_sequences=True, input_shape=(seq_len, features)))
     model.add(Dropout(0.2))
     model.add(LSTM(units=units))
     model.add(Dropout(0.2))
-    model.add(Dense(num_categorias, activation='softmax'))  # Usar softmax para multiclase
+    model.add(Dense(categoria_indices, activation='softmax'))  # Usar softmax para multiclase
 
-    # Compilación del modelo para clasificación multiclase
+       
     model.compile(
-        loss='sparse_categorical_crossentropy' if y_train.ndim == 1 else 'categorical_crossentropy', 
-        optimizer=Adam(), 
-        metrics=['accuracy']
-    )
+    loss='categorical_crossentropy',  # Cambiar a categorical_crossentropy
+    optimizer=Adam(),
+    metrics=['accuracy']
+)
 
-    # Conversión de etiquetas para multiclase (si es necesario)
-    if y_train.ndim == 1:
+    if y_train.ndim == 1:  # Si las etiquetas son enteros (no one-hot)
         y_train_one_hot = to_categorical(y_train, num_classes=num_categorias)
         y_test_one_hot = to_categorical(y_test, num_classes=num_categorias)
     else:
         y_train_one_hot = y_train
         y_test_one_hot = y_test
+
+    # Imprimir formas y ejemplos de etiquetas
+    print("Forma de y_train:", y_train.shape)
+    print("Forma de y_train_one_hot:", y_train_one_hot.shape)
+    print("Ejemplos de y_train_one_hot:", y_train_one_hot[:5])
+    print("Forma de y_test:", y_test.shape)
+    print("Forma de y_test_one_hot:", y_test_one_hot.shape)
+    print("Ejemplos de y_test_one_hot:", y_test_one_hot[:5])
 
     # Entrenamiento del modelo
     history = model.fit(X_train, y_train_one_hot, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test_one_hot))
@@ -550,6 +600,7 @@ def red_neuronal(X_train, y_train, X_test, y_test, seq_len, features, units, num
     model.save('modelo_entrenado.h5')
 
     return model, history, y_test_one_hot
+
 
 
 @red_lstn.route('/utilizar_datos_entrenado', methods=['POST'])

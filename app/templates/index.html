@@ -95,7 +95,19 @@
     border: none;
 }
 
-
+.categoria-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.categoria-container label,
+.categoria-container input {
+    margin-right: 10px;
+}
+.categoria-container input[type="text"],
+.categoria-container input[type="number"] {
+    width: 150px;
+}
 
 /* Estilos para la tabla */
 #tablaCategorias {
@@ -445,11 +457,14 @@ th {
                 var units = $('#units').val();
                 var features = $('#features').val();
                 var num_categorias = $('#num_categorias').val();
-                // Recoger las categorías
+                // Recoger las categorías              
                 var categorias = [];
+                var valores = [];
                 for (var i = 1; i <= num_categorias; i++) {
-                    var categoria = $('#categoria_' + i).val();
+                    var categoria = $('#categoria_' + i).val();  // Nombre de la categoría
+                    var valor = $('#valor_' + i).val();           // Valor asociado a la categoría
                     categorias.push(categoria);
+                    valores.push(parseFloat(valor));  // Asegúrate de enviar los valores como números
                 }
                 // Determinar la URL según la acción
                 if (action === 'entrenar') {
@@ -481,6 +496,7 @@ th {
                         features: features,
                         num_categorias: num_categorias,
                         categorias: categorias,
+                        valores:valores,
                         param_grid: param_grid  // Enviar la matriz de `param_grid`
                     }),
                     success: function(response) {
@@ -684,8 +700,6 @@ th {
 
 
 
-
-
         document.getElementById('abrirModalCategorias').addEventListener('click', function() {
             var numCategorias = document.getElementById('num_categorias').value; // Obtiene el número de categorías
         
@@ -699,21 +713,40 @@ th {
             var formCategorias = document.getElementById('formCategorias');
             formCategorias.innerHTML = '';
         
-            // Agregar los inputs para cada categoría
+            // Agregar los inputs para cada categoría y su valor asociado
             for (var i = 1; i <= numCategorias; i++) {
-                var label = document.createElement('label');
-                label.setAttribute('for', 'categoria_' + i);
-                label.textContent = 'Categoría ' + i + ':';
+                // Crear un contenedor para la categoría y su valor
+                var container = document.createElement('div');
+                container.classList.add('categoria-container');
         
-                var input = document.createElement('input');
-                input.type = 'text';
-                input.id = 'categoria_' + i;
-                input.name = 'categoria_' + i;
-                input.required = true;
+                var labelCategoria = document.createElement('label');
+                labelCategoria.setAttribute('for', 'categoria_' + i);
+                labelCategoria.textContent = 'Categoría ' + i + ':';
         
-                formCategorias.appendChild(label);
-                formCategorias.appendChild(input);
-                formCategorias.appendChild(document.createElement('br'));  // Salto de línea
+                var inputCategoria = document.createElement('input');
+                inputCategoria.type = 'text';
+                inputCategoria.id = 'categoria_' + i;
+                inputCategoria.name = 'categoria_' + i;
+                inputCategoria.required = true;
+        
+                var labelValor = document.createElement('label');
+                labelValor.setAttribute('for', 'valor_' + i);
+                labelValor.textContent = 'Valor de Categoría ' + i + ':';
+        
+                var inputValor = document.createElement('input');
+                inputValor.type = 'number';
+                inputValor.id = 'valor_' + i;
+                inputValor.name = 'valor_' + i;
+                inputValor.required = true;
+        
+                // Agregar los elementos al contenedor
+                container.appendChild(labelCategoria);
+                container.appendChild(inputCategoria);
+                container.appendChild(labelValor);
+                container.appendChild(inputValor);
+        
+                // Agregar el contenedor al formulario
+                formCategorias.appendChild(container);
             }
         
             // Abrir el modal de categorías
@@ -723,21 +756,32 @@ th {
         document.getElementById('guardarCategorias').addEventListener('click', function() {
             var numCategorias = document.getElementById('num_categorias').value;
             var categorias = [];
-            
-            // Obtener los valores de las categorías
+            var valores = [];
+        
+            // Obtener los valores de las categorías y sus valores
             for (var i = 1; i <= numCategorias; i++) {
                 var categoria = document.getElementById('categoria_' + i).value;
+                var valor = document.getElementById('valor_' + i).value;
+        
+                // Validar que el valor sea un número
+                if (isNaN(valor) || valor === '') {
+                    alert('Por favor ingresa un valor válido para la categoría ' + categoria);
+                    return;
+                }
+        
                 categorias.push(categoria);
+                valores.push(parseFloat(valor)); // Convertir el valor a número flotante
             }
         
             console.log('Categorías ingresadas:', categorias);
+            console.log('Valores de las categorías:', valores);
         
-            // Aquí puedes hacer algo con las categorías, como enviarlas al servidor.
+            // Aquí puedes hacer algo con las categorías y sus valores, como enviarlas al servidor.
         
             // Cerrar el modal de categorías
             document.getElementById('modalCategorias').style.display = 'none';
         
-            // Agregar las categorías a la tabla en el primer modal
+            // Agregar las categorías y valores a la tabla en el primer modal
             var tabla = document.getElementById('tablaCategoriasLista').getElementsByTagName('tbody')[0];
             tabla.innerHTML = ''; // Limpiar la tabla antes de agregar nuevas filas
         
@@ -745,8 +789,11 @@ th {
                 var row = tabla.insertRow();
                 var cell1 = row.insertCell(0);
                 var cell2 = row.insertCell(1);
+                var cell3 = row.insertCell(2);
+        
                 cell1.textContent = index + 1;  // Número de la categoría
                 cell2.textContent = categoria; // Nombre de la categoría
+                cell3.textContent = valores[index]; // Valor de la categoría
             });
         });
         
@@ -757,7 +804,7 @@ th {
                 this.closest('.modal').style.display = 'none';
             });
         });
-
+        
 
 
 
