@@ -1,15 +1,18 @@
-from models.usuario import Usuario
-from models.cuentas import Cuenta
-from models.ficha import Ficha
-from models.logs import Logs
-from models.orden import Orden
-from models.instrumento import Instrumento
-from models.instrumentoGet import InstrumentoGet
-from models.instrumentosSuscriptos import InstrumentoSuscriptos
-from models.instrumentoEstrategiaUno import InstrumentoEstrategiaUno
-from models.trades import Trade
-from models.trazaFicha import TrazaFicha
-from models.triggerEstrategia import TriggerEstrategia
+from app.models.usuario import Usuario
+from app.models.cuentas import Cuenta
+from app.models.ficha import Ficha
+from app.models.logs import Logs
+from app.models.orden import Orden
+from app.models.instrumento import Instrumento
+from app.models.instrumentoGet import InstrumentoGet
+from app.models.instrumentosSuscriptos import InstrumentoSuscriptos
+from app.models.instrumentoEstrategiaUno import InstrumentoEstrategiaUno
+from app.models.trades import Trade
+from app.models.trazaFicha import TrazaFicha
+from app.models.triggerEstrategia import TriggerEstrategia
+from app.models.accionWorkflow import AccionWorkflow
+from app.models.events import Events
+from app.models.workflows import Workflows
 
 from datetime import datetime
 from flask import Blueprint
@@ -17,18 +20,13 @@ from flask import Blueprint
 creaTabla = Blueprint('creaTabla',__name__)
 
 def crea_tablas_DB():
+    
+    Events.crear_tabla_events()
+    AccionWorkflow.crear_tabla_accionWorkflow()
+    Workflows.crear_tabla_workflows()
     Usuario.crear_tabla_usuarios()
-    Cuenta.crear_tabla_cuentas()
-    Ficha.crear_tabla_ficha()
-    Logs.crear_tabla_logs() 
-    Trade.crear_tabla_trades()
-    TrazaFicha.crear_tabla_trazaFichas()
-    TriggerEstrategia.crear_tabla_triggerEstrategia()
-    Orden.crear_tabla_orden()   
-    Instrumento.crear_tabla_instrumento()
-    InstrumentoGet.crear_tabla_instrumentoGet()
-    InstrumentoSuscriptos.crear_tabla_instrumentoSuscriptos()
-    InstrumentoEstrategiaUno.crear_tabla_instrumentoEstrategiaUno()
+    Cuenta.crear_tabla_cuentas()   
+    Logs.crear_tabla_logs()    
     
     
     

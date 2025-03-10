@@ -24,16 +24,30 @@
         function addWorkflow() {
             const workflowName = document.getElementById("workflowName").value;
             const eventTrigger = document.getElementById("eventTrigger").value;
-            
-            fetch("http://localhost:5000/add_workflow", {
+            const usuarioId = 1;  // O obtén el valor dinámicamente si es necesario
+        
+            const requestData = {
+                nombre: workflowName,
+                usuario_id: usuarioId,  // Añade el usuario_id si es necesario en tu backend
+                configuraciones: { evento: eventTrigger }
+            };
+        
+            fetch("/add_workflow", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ nombre: workflowName, configuraciones: { evento: eventTrigger } })
+                body: JSON.stringify(requestData)
             })
             .then(response => response.json())
-            .then(data => alert("Workflow agregado: " + JSON.stringify(data)))
+            .then(data => {
+                if (data.message) {
+                    alert("Workflow agregado: " + JSON.stringify(data));
+                } else {
+                    alert("Hubo un error al agregar el workflow.");
+                }
+            })
             .catch(error => console.error("Error:", error));
         }
+        
     </script>
 </head>
 <body class="container mt-5">

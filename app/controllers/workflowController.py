@@ -1,10 +1,17 @@
-from flask import Flask, request, jsonify
+from flask import Flask, Blueprint,request, jsonify,current_app
 import sqlite3
 import json
 import datetime
 
-app = Flask(__name__)
+from app.models.usuario import Usuario
+from app.models.accionWorkflow import AccionWorkflow
+from app.models.workflows import Workflows
+from app.models.events import Events
 
+
+workflowController = Blueprint('workflowController', __name__)
+
+@workflowController.route('/alta', methods=['POST'])
 def init_db():
     conn = sqlite3.connect("workflow.db")
     cursor = conn.cursor()
@@ -34,7 +41,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-@app.route("/trigger_event", methods=["POST"])
+@workflowController.route("/trigger_event", methods=["POST"])
 def trigger_event():
     data = request.json
     tipo = data.get("tipo")
@@ -81,21 +88,39 @@ def execute_action(tipo, parametros):
     else:
         return {"status": "unknown", "message": "Tipo de acción no reconocido"}
 
-@app.route("/add_workflow", methods=["POST"])
+@workflowController.route("/add_workflow", methods=["POST"])
 def add_workflow():
-    data = request.json
-    nombre = data.get("nombre")
-    usuario_id = data.get("usuario_id", 0)
-    configuraciones = json.dumps(data.get("configuraciones", {}))
-    
-    conn = sqlite3.connect("workflow.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO workflows (nombre, activado, usuario_id, configuraciones) VALUES (?, 1, ?, ?)", (nombre, usuario_id, configuraciones))
-    conn.commit()
-    conn.close()
-    
-    return jsonify({"message": "Workflow agregado", "workflow": nombre})
+    from app import db  # Importar aquí dentro de la función
+    # Obtener datos del cuerpo de la solicitud (en formato JSON).
+    data = request.get_json()
 
-if __name__ == "__main__":
-    init_db()
-    app.run(debug=True)
+    # Obtener los valores del JSON. Si alguno no existe, se puede establecer un valor predeterminado.
+    nombre = data.get("nombre")
+    usuario_id = data.get("usuario_id", 0)  # Valor predeterminado es 0 si no se pasa
+    configuraciones = json.dumps(data.get("configuraciones", {}))  # Si no hay configuraciones, se pasa un dict vacío.
+
+    # Asegúrate de que `nombre` esté presente antes de crear el nuevo flujo de trabajo
+    if not nombre:
+        return jsonify({"error": "El nombre es obligatorio"}), 400
+
+    # Crear la instancia de Workflows con los datos recibidos.
+    new_workflow = Workflows(
+        nombre=nombre,
+        activado=1,  # Asumo que activado es siempre True por defecto. Cambia si es necesario.
+        configuraciones=configuraciones,
+        user_id=int(usuario_id)  # Asegúrate de que el modelo Workflows tenga este campo.
+    )
+
+    # Agregar a la sesión de la base de datos y hacer commit.
+    try:
+        db.session.add(new_workflow)
+        db.session.commit()  # Intentar hacer commit
+        db.session.close()
+    except Exception as e:
+        db.session.rollback()  # Rollback en caso de error
+        return jsonify({"error": "Hubo un error al agregar el workflow", "details": str(e)}), 500
+    finally:
+        db.session.remove()  # Se recomienda usar remove() en lugar de close() para gestionar correctamente la sesión en Flask.
+
+    # Retornar un mensaje con el nombre del nuevo workflow.
+    return jsonify({"message": "Workflow agregado", "workflow": nombre}), 201

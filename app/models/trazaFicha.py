@@ -12,9 +12,9 @@ class TrazaFicha(db.Model):
     __tablename__ = 'trazaFichas'
     id = db.Column(Integer, primary_key=True, autoincrement=True)
     idFicha = db.Column(Integer, ForeignKey('ficha.id'))  
-    user_id_traspaso = user_id = db.Column(db.Integer, nullable=False)   
+    user_id_traspaso = db.Column(db.Integer, nullable=False)   
     
-    cuenta_broker_id_traspaso = user_id = db.Column(db.Integer, nullable=False) 
+    cuenta_broker_id_traspaso = db.Column(db.Integer, nullable=False) 
     fecha_traspaso = db.Column(DateTime)
     fecha_habilitacion = db.Column(DateTime)
     fecha_denuncia = db.Column(DateTime)
