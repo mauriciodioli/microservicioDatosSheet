@@ -10,16 +10,30 @@
         function triggerEvent() {
             const eventType = document.getElementById("eventType").value;
             const eventData = document.getElementById("eventData").value;
-            
-            fetch("http://localhost:5000/trigger_event", {
+            const user_id = 1;  // Aquí defines el user_id
+        
+            fetch("/trigger_event", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tipo: eventType, datos: { message: eventData } })
+                body: JSON.stringify({
+                    tipo: eventType,
+                    datos: { message: eventData },
+                    user_id: user_id  // Agregamos el user_id al cuerpo de la solicitud
+                })
             })
             .then(response => response.json())
-            .then(data => alert("Evento enviado: " + JSON.stringify(data)))
-            .catch(error => console.error("Error:", error));
+            .then(data => {
+                alert("Evento enviado: " + JSON.stringify(data));
+        
+                // Vaciar los campos del formulario después de que el evento haya sido enviado correctamente
+                document.getElementById("eventType").value = '';
+                document.getElementById("eventData").value = '';
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
         }
+        
 
         function addWorkflow() {
             const workflowName = document.getElementById("workflowName").value;
@@ -41,6 +55,9 @@
             .then(data => {
                 if (data.message) {
                     alert("Workflow agregado: " + JSON.stringify(data));
+                    // Vaciar los campos del formulario
+                    document.getElementById("workflowName").value = '';
+                    document.getElementById("eventTrigger").value = '';
                 } else {
                     alert("Hubo un error al agregar el workflow.");
                 }

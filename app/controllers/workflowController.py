@@ -1,7 +1,7 @@
 from flask import Flask, Blueprint,request, jsonify,current_app
 import sqlite3
 import json
-import datetime
+from datetime import datetime  
 
 from app.models.usuario import Usuario
 from app.models.accionWorkflow import AccionWorkflow
@@ -43,26 +43,48 @@ def init_db():
 
 @workflowController.route("/trigger_event", methods=["POST"])
 def trigger_event():
+    from app import db  
+    # Obtener los datos del cuerpo de la solicitud (JSON)
     data = request.json
     tipo = data.get("tipo")
     datos = json.dumps(data.get("datos", {}))
-    
-    conn = sqlite3.connect("workflow.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO events (tipo, datos) VALUES (?, ?)", (tipo, datos))
-    conn.commit()
-    
+    user_id = data.get("user_id")
+    fechaCreacion = datetime.now()
+
+    # Verificar que los campos necesarios estén presentes
+    if not tipo or not user_id:
+        return jsonify({"error": "Faltan campos obligatorios"}), 400
+
+    # Crear la instancia de Events con los datos recibidos
+    new_event = Events(
+        user_id=int(user_id),
+        tipo=tipo,
+        fechaCreacion=fechaCreacion,
+        datosEvents=datos
+    )
+
+    # Agregar a la sesión de la base de datos y hacer commit
+    try:
+        db.session.add(new_event)
+        db.session.commit()  # Intentar hacer commit
+    except Exception as e:
+        db.session.rollback()  # Rollback en caso de error
+        return jsonify({"error": "Hubo un error al agregar el evento", "details": str(e)}), 500
+
+    # Obtener workflows activados desde la base de datos
+    workflows = db.session.query(Workflows).filter_by(activado=1).all()
+
     # Evaluar workflows que respondan a este evento
-    cursor.execute("SELECT id, nombre, configuraciones FROM workflows WHERE activado = 1")
-    workflows = cursor.fetchall()
     for wf in workflows:
-        workflow_id, nombre, configuraciones = wf
+        workflow_id, nombre, configuraciones = wf.id, wf.nombre, wf.configuraciones
         configuraciones = json.loads(configuraciones)
-        
+
         if configuraciones.get("evento") == tipo:
             execute_workflow(workflow_id)
-    
-    conn.close()
+
+    # Cerrar sesión de la base de datos
+    db.session.close()
+
     return jsonify({"message": "Evento recibido y procesado", "tipo": tipo})
 
 def execute_workflow(workflow_id):
@@ -90,7 +112,7 @@ def execute_action(tipo, parametros):
 
 @workflowController.route("/add_workflow", methods=["POST"])
 def add_workflow():
-    from app import db  # Importar aquí dentro de la función
+    from app import db  
     # Obtener datos del cuerpo de la solicitud (en formato JSON).
     data = request.get_json()
 
