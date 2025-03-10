@@ -25,6 +25,7 @@ from app.controllers.instrumentos import instrumentos
 from app.tokens.token import token
 from app.controllers.get_login import get_login
 from app.Experimental.red_lstn import red_lstn
+from app.Experimental.analisis_por_primos import analisis_por_primos
 import tensorflow as tf
 
 
@@ -54,6 +55,7 @@ app.register_blueprint(validaInstrumentos)
 app.register_blueprint(instrumentos)
 app.register_blueprint(get_login)
 app.register_blueprint(red_lstn)
+app.register_blueprint(analisis_por_primos)
 
 engine = create_engine(Config.SQLALCHEMY_DATABASE_URI, poolclass=QueuePool, pool_timeout=60, pool_size=1000)
 
@@ -75,7 +77,7 @@ def index():
     try:
         
         
-        print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))     
+       # print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))     
         return render_template('index.html')
     except Exception as e:
         error_message = f"Error en index: {str(e)}"
@@ -91,6 +93,13 @@ def check_db():
             return 'Conexión a la base de datos exitosa!'
         else:
             return 'No se pudo establecer conexión a la base de datos.'
+    except Exception as e:
+        return f'Error en la conexión a la base de datos: {str(e)}'
+    
+@app.route('/workflow/')
+def workflow():
+    try:
+        return render_template('workflowUsuario.html')
     except Exception as e:
         return f'Error en la conexión a la base de datos: {str(e)}'
 
