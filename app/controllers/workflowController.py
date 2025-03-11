@@ -1,61 +1,30 @@
-from flask import Flask, Blueprint,request, jsonify,current_app
-import sqlite3
+from flask import Flask, Blueprint, request, jsonify, current_app
 import json
 from datetime import datetime  
+import redis
 
 from app.models.usuario import Usuario
 from app.models.accionWorkflow import AccionWorkflow
 from app.models.workflows import Workflows
 from app.models.events import Events
-
+from app.models.historial import Historial
 
 workflowController = Blueprint('workflowController', __name__)
 
-@workflowController.route('/alta', methods=['POST'])
-def init_db():
-    conn = sqlite3.connect("workflow.db")
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS events (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        tipo TEXT,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        datos TEXT)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS workflows (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nombre TEXT,
-                        activado BOOLEAN DEFAULT 1,
-                        usuario_id INTEGER,
-                        configuraciones TEXT)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS acciones (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        tipo TEXT,
-                        parametros TEXT,
-                        workflow_id INTEGER,
-                        orden INTEGER)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS historial_ejecucion (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        workflow_id INTEGER,
-                        estado TEXT,
-                        resultado TEXT,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-    conn.commit()
-    conn.close()
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
 @workflowController.route("/trigger_event", methods=["POST"])
 def trigger_event():
     from app import db  
-    # Obtener los datos del cuerpo de la solicitud (JSON)
     data = request.json
     tipo = data.get("tipo")
     datos = json.dumps(data.get("datos", {}))
     user_id = data.get("user_id")
     fechaCreacion = datetime.now()
 
-    # Verificar que los campos necesarios estén presentes
     if not tipo or not user_id:
         return jsonify({"error": "Faltan campos obligatorios"}), 400
 
-    # Crear la instancia de Events con los datos recibidos
     new_event = Events(
         user_id=int(user_id),
         tipo=tipo,
@@ -63,44 +32,60 @@ def trigger_event():
         datosEvents=datos
     )
 
-    # Agregar a la sesión de la base de datos y hacer commit
     try:
         db.session.add(new_event)
-        db.session.commit()  # Intentar hacer commit
+        db.session.commit()
     except Exception as e:
-        db.session.rollback()  # Rollback en caso de error
+        db.session.rollback()
         return jsonify({"error": "Hubo un error al agregar el evento", "details": str(e)}), 500
 
-    # Obtener workflows activados desde la base de datos
     workflows = db.session.query(Workflows).filter_by(activado=1).all()
 
-    # Evaluar workflows que respondan a este evento
     for wf in workflows:
-        workflow_id, nombre, configuraciones = wf.id, wf.nombre, wf.configuraciones
+        workflow_id, nombre, configuraciones, user_id = wf.id, wf.nombre, wf.configuraciones, wf.user_id
         configuraciones = json.loads(configuraciones)
-
         if configuraciones.get("evento") == tipo:
-            execute_workflow(workflow_id)
+            redis_client.rpush("workflow_queue", json.dumps({"workflow_id": workflow_id, "user_id": user_id}))
 
-    # Cerrar sesión de la base de datos
     db.session.close()
-
     return jsonify({"message": "Evento recibido y procesado", "tipo": tipo})
 
-def execute_workflow(workflow_id):
-    conn = sqlite3.connect("workflow.db")
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT id, tipo, parametros FROM acciones WHERE workflow_id = ? ORDER BY orden", (workflow_id,))
-    acciones = cursor.fetchall()
-    
-    for accion in acciones:
+def process_workflows():
+    from app import db
+    while True:
+        _, data = redis_client.blpop("workflow_queue")
+        task = json.loads(data)
+        workflow_id = task["workflow_id"]
+        user_id = task["user_id"]
+        execute_workflow(db, workflow_id, user_id)
+
+def execute_workflow(db, workflow_id, user_id):
+    acciones_workflow = db.session.query(AccionWorkflow).filter_by(workflow_id=workflow_id)
+    fecha = datetime.now()
+    max_reintentos = 3
+
+    for accion in acciones_workflow:
         accion_id, tipo, parametros = accion
-        resultado = execute_action(tipo, json.loads(parametros))
-        cursor.execute("INSERT INTO historial_ejecucion (workflow_id, estado, resultado) VALUES (?, ?, ?)", (workflow_id, "Ejecutado", json.dumps(resultado)))
-        conn.commit()
-    
-    conn.close()
+        intentos = 0
+        resultado = None
+
+        while intentos < max_reintentos:
+            resultado = execute_action(tipo, json.loads(parametros))
+            if resultado.get("status") != "unknown":
+                break
+            intentos += 1
+
+        new_historial = Historial(
+            fecha=fecha,
+            user_id=user_id,           
+            workflow_id=workflow_id,
+            estado='Fallido' if intentos == max_reintentos else 'Ejecutado',
+            resultado=json.dumps(resultado),
+            intentos=intentos
+        )
+        db.session.add(new_historial)
+        db.session.commit()
+    return True
 
 def execute_action(tipo, parametros):
     if tipo == "log":
@@ -113,36 +98,42 @@ def execute_action(tipo, parametros):
 @workflowController.route("/add_workflow", methods=["POST"])
 def add_workflow():
     from app import db  
-    # Obtener datos del cuerpo de la solicitud (en formato JSON).
     data = request.get_json()
-
-    # Obtener los valores del JSON. Si alguno no existe, se puede establecer un valor predeterminado.
     nombre = data.get("nombre")
-    usuario_id = data.get("usuario_id", 0)  # Valor predeterminado es 0 si no se pasa
-    configuraciones = json.dumps(data.get("configuraciones", {}))  # Si no hay configuraciones, se pasa un dict vacío.
+    usuario_id = data.get("usuario_id", 0)
+    configuraciones = json.dumps(data.get("configuraciones", {}))
 
-    # Asegúrate de que `nombre` esté presente antes de crear el nuevo flujo de trabajo
     if not nombre:
         return jsonify({"error": "El nombre es obligatorio"}), 400
 
-    # Crear la instancia de Workflows con los datos recibidos.
     new_workflow = Workflows(
         nombre=nombre,
-        activado=1,  # Asumo que activado es siempre True por defecto. Cambia si es necesario.
+        activado=1,
         configuraciones=configuraciones,
-        user_id=int(usuario_id)  # Asegúrate de que el modelo Workflows tenga este campo.
+        user_id=int(usuario_id)
     )
 
-    # Agregar a la sesión de la base de datos y hacer commit.
     try:
         db.session.add(new_workflow)
-        db.session.commit()  # Intentar hacer commit
+        db.session.commit()
         db.session.close()
     except Exception as e:
-        db.session.rollback()  # Rollback en caso de error
+        db.session.rollback()
         return jsonify({"error": "Hubo un error al agregar el workflow", "details": str(e)}), 500
     finally:
-        db.session.remove()  # Se recomienda usar remove() en lugar de close() para gestionar correctamente la sesión en Flask.
+        db.session.remove()
 
-    # Retornar un mensaje con el nombre del nuevo workflow.
     return jsonify({"message": "Workflow agregado", "workflow": nombre}), 201
+
+@workflowController.route("/get_historial/<int:workflow_id>", methods=["GET"])
+def get_historial(workflow_id):
+    from app import db
+    historial = db.session.query(Historial).filter_by(workflow_id=workflow_id).all()
+    historial_json = [{
+        "id": h.id,
+        "fecha": h.fecha.isoformat(),
+        "estado": h.estado,
+        "resultado": json.loads(h.resultado),
+        "intentos": h.intentos
+    } for h in historial]
+    return jsonify(historial_json)

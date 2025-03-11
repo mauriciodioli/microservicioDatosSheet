@@ -5,6 +5,7 @@ from .usuario import Usuario
 from .events import Events
 from .workflows import Workflows
 from .accionWorkflow import AccionWorkflow
+from .historial import Historial
 
 
 db = SQLAlchemy()
