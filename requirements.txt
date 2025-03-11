@@ -71,7 +71,7 @@ setuptools==75.3.0
 simplejson==3.19.2
 six==1.16.0
 soupsieve==2.6
-SQLAlchemy==2.0.31
+SQLAlchemy==1.4.31
 threadpoolctl==3.5.0
 typing_extensions==4.12.2
 tzdata==2024.1
