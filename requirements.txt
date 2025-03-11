@@ -73,7 +73,7 @@ six==1.16.0
 soupsieve==2.6
 SQLAlchemy==1.4.31
 threadpoolctl==3.5.0
-typing_extensions==4.12.2
+typing_extensions==4.5.0  # Actualizar a una versión más reciente
 tzdata==2024.1
 urllib3==2.2.2
 webencodings==0.5.1
