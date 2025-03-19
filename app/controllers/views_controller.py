@@ -53,6 +53,7 @@ def check_db():
 @views_controller.route('/workflow/')
 def workflow():
     try:
+        print('test')
         return render_template('workflowUsuario.html')
     except Exception as e:
         return f'Error en la conexión a la base de datos: {str(e)}'
